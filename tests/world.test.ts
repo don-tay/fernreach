@@ -3,7 +3,7 @@ import type { Action, WorldEvent } from '../src/logic/world';
 import { World } from '../src/logic/world';
 import { createPlayer } from '../src/logic/player';
 import { createRng } from '../src/logic/rng';
-import { GROUND_Y } from '../src/data/maps';
+import { GROUND_Y, MAPS } from '../src/data/maps';
 import { countItem } from '../src/logic/inventory';
 
 const DT = 1 / 60;
@@ -61,6 +61,47 @@ describe('world: movement', () => {
     run(0.1, 'down', 'jump');
     run(1);
     expect(b.y).toBe(GROUND_Y);
+  });
+
+  it('climbs down a rope and lands on the ground below', () => {
+    const { world, run } = setup('snail_hunting_1');
+    const b = world.pr.body;
+    world.loadMap('snail_hunting_1', undefined, { x: 400, y: 560 }); // top of the leftmost rope
+    world.mobs = [];
+    run(0.1, 'down');
+    expect(world.pr.climbing).toBeGreaterThanOrEqual(0);
+    run(3, 'down');
+    expect(world.pr.climbing).toBe(-1);
+    expect(b.onGround).toBe(true);
+    expect(b.y).toBe(GROUND_Y);
+  });
+
+  it('climbs down every rope and ladder in every map without falling out', () => {
+    for (const map of Object.values(MAPS)) {
+      for (const rope of map.ropes) {
+        const { world, run } = setup(map.id);
+        world.loadMap(map.id, undefined, { x: rope.x, y: rope.top });
+        world.mobs = [];
+        run(0.1, 'down');
+        expect(world.pr.climbing, `${map.id} rope at x=${rope.x}`).toBeGreaterThanOrEqual(0);
+        run(4, 'down');
+        run(1);
+        const b = world.pr.body;
+        expect(b.onGround, `${map.id} rope at x=${rope.x}`).toBe(true);
+        expect(b.y, `${map.id} rope at x=${rope.x}`).toBeGreaterThan(rope.bottom);
+        expect(b.y).toBeLessThanOrEqual(GROUND_Y);
+      }
+    }
+  });
+
+  it('returns a player who falls out of the map to the spawn point', () => {
+    const { world, run } = setup('snail_hunting_1');
+    world.mobs = [];
+    Object.assign(world.pr.body, { x: 900, y: 5000, onGround: false, platform: -1 });
+    run(0.1);
+    expect(world.pr.body.onGround).toBe(true);
+    expect(world.pr.body.x).toBe(world.map.spawn.x);
+    expect(world.pr.body.y).toBe(GROUND_Y);
   });
 
   it('cannot drop through solid ground', () => {

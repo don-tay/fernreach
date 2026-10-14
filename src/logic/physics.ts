@@ -50,13 +50,19 @@ export function stepBody(b: Body, platforms: Platform[], mapWidth: number, dt: n
   b.y += b.vy * dt;
   if (b.vy < 0) return;
 
+  const landed = findLanding(platforms, b.x, prevY, b.y, b.dropThrough);
+  if (landed !== -1) land(b, platforms, landed);
+}
+
+/** Highest platform whose surface lies between fromY and toY (moving down) at x, or -1. */
+export function findLanding(platforms: Platform[], x: number, fromY: number, toY: number, ignore = -1): number {
   let landed = -1;
   for (let i = 0; i < platforms.length; i++) {
     const p = platforms[i];
-    if (i === b.dropThrough || b.x < p.x1 || b.x > p.x2) continue;
-    if (prevY <= p.y + 0.01 && b.y >= p.y && (landed === -1 || p.y < platforms[landed].y)) landed = i;
+    if (i === ignore || x < p.x1 || x > p.x2) continue;
+    if (fromY <= p.y + 0.01 && toY >= p.y && (landed === -1 || p.y < platforms[landed].y)) landed = i;
   }
-  if (landed !== -1) land(b, platforms, landed);
+  return landed;
 }
 
 export function land(b: Body, platforms: Platform[], index: number): void {

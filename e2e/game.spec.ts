@@ -35,6 +35,22 @@ test('climbs a rope onto a platform', async ({ page }) => {
   expect((await state(page)).onGround).toBe(true);
 });
 
+test('climbs down the leftmost rope in Snail Hunting Ground I to the ground', async ({ page }) => {
+  await newGame(page);
+  await page.evaluate(() => {
+    window.__maple.warp('snail_hunting_1');
+    window.__maple.teleport(400, 550);
+  });
+  await settle(page);
+  expect((await state(page)).y).toBe(560);
+  await page.keyboard.down('ArrowDown');
+  await expect.poll(async () => (await state(page)).climbing, { timeout: 5000 }).toBeGreaterThanOrEqual(0);
+  await expect.poll(async () => (await state(page)).climbing, { timeout: 10_000 }).toBe(-1);
+  await page.keyboard.up('ArrowDown');
+  await settle(page);
+  expect((await state(page)).y).toBe(GROUND_Y);
+});
+
 test('kills a snail and gains EXP', async ({ page }) => {
   await newGame(page);
   await page.evaluate(() => window.__maple.warp('snail_hunting_1'));

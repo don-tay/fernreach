@@ -13,7 +13,7 @@ import { derive, rollMobDamage, rollPlayerDamage } from './combat';
 import { addItem, canAdd, countItem, removeAt } from './inventory';
 import type { Body } from './physics';
 import {
-  CLIMB_SPEED, createBody, JUMP_SPEED, land, platformAt, ropeToClimbDown, ropeToClimbUp, stepBody, WALK_SPEED,
+  CLIMB_SPEED, createBody, findLanding, JUMP_SPEED, land, platformAt, ropeToClimbDown, ropeToClimbUp, stepBody, WALK_SPEED,
 } from './physics';
 import type { PlayerState, StatName } from './player';
 import { addAp, addSp, equipFromInventory, gainExp, MAX_LEVEL, unequip } from './player';
@@ -287,7 +287,17 @@ export class World {
         this.heal(5, 3);
       }
     }
+    if (b.y > this.map.height) this.rescue();
     this.syncPosition();
+  }
+
+  /** Safety net: returns a player who somehow left the map to its spawn point. */
+  private rescue(): void {
+    const b = this.pr.body;
+    const { x, y } = this.map.spawn;
+    Object.assign(b, createBody(x, y, PLAYER_HALF_WIDTH));
+    land(b, this.map.platforms, platformAt(this.map.platforms, x, y));
+    this.pr.climbing = -1;
   }
 
   private grabRope(index: number): void {
@@ -312,6 +322,7 @@ export class World {
       return;
     }
     const dy = ((input.held.has('down') ? 1 : 0) - (input.held.has('up') ? 1 : 0)) * CLIMB_SPEED * dt;
+    const prevY = b.y;
     b.y += dy;
     if (b.y <= rope.top) {
       b.y = rope.top;
@@ -323,7 +334,8 @@ export class World {
     } else if (b.y >= rope.bottom + 20) {
       pr.climbing = -1;
       b.vy = 0;
-      stepBody(b, this.map.platforms, this.map.width, dt);
+      const pi = findLanding(this.map.platforms, b.x, prevY, b.y);
+      if (pi >= 0) land(b, this.map.platforms, pi);
     }
   }
 
