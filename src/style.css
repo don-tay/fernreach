@@ -150,8 +150,8 @@ button:disabled { opacity: 0.45; cursor: default; }
 .win-stats { left: 12px; top: 40px; width: 200px; }
 .win-equip { left: 222px; top: 40px; width: 230px; }
 .win-inventory { right: 12px; top: 40px; width: 220px; }
-.win-skills { left: 12px; top: 330px; width: 300px; }
-.win-quests { left: 322px; top: 300px; width: 250px; }
+.win-skills { left: 222px; top: 250px; width: 300px; }
+.win-quests { right: 12px; top: 270px; width: 220px; }
 
 .row { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
 .row span { flex: 1; color: #4a5070; }
@@ -223,7 +223,6 @@ button:disabled { opacity: 0.45; cursor: default; }
 .shop-row { display: flex; align-items: center; gap: 4px; padding: 2px 4px; border-bottom: 1px solid #e4e8f2; }
 .shop-row .name { flex: 1; }
 .shop-row .price { color: #9a6a10; font-weight: bold; }
-.shop-row .price::after { content: ' ₥'; font-weight: normal; }
 .shop-foot { padding: 0 8px 8px; }
 .shop-foot button { margin-left: auto; }
 

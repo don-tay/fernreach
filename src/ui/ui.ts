@@ -149,7 +149,7 @@ export class UI {
 
   private pushMessage(text: string, kind: string): void {
     this.messages.push({ text, kind, at: performance.now() });
-    if (this.messages.length > 8) this.messages.shift();
+    if (this.messages.length > 5) this.messages.shift();
     this.renderLog();
   }
 
