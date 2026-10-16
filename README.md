@@ -1,5 +1,7 @@
 # Fernreach
 
+**Play:** https://don-tay.github.io/fernreach/
+
 A cozy side-scrolling adventure that runs in the browser, in the spirit of classic 2D MMORPGs. This is the MVP: a novice exploring a small corner of Fernreach.
 
 All names, numbers and art are original; the art is drawn in code at runtime.
@@ -71,3 +73,7 @@ src/debug    dev-only `window.__game` hook used by Playwright (excluded from pro
 tests        Vitest unit tests
 e2e          Playwright tests
 ```
+
+## License
+
+The code is released under the [MIT License](LICENSE). The license covers the code only: it doesn't grant rights to the Fernreach name or logo.

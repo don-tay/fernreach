@@ -31,5 +31,11 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
     "vitest": "^5.0.4"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/don-tay/fernreach.git"
+  },
+  "homepage": "https://don-tay.github.io/fernreach/"
 }
