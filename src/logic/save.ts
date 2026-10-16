@@ -38,6 +38,7 @@ function isValid(p: PlayerState): boolean {
   if (!nums.every((n) => typeof n === 'number' && Number.isFinite(n))) return false;
   if (p.level < 1 || p.level > MAX_LEVEL) return false;
   if (!MAPS[p.mapId]) p.mapId = TOWN_MAP;
+  if (typeof p.id !== 'string' || !p.id) p.id = crypto.randomUUID();
   const tabs = ['equip', 'use', 'etc'] as const;
   if (!tabs.every((t) => Array.isArray(p.inventory?.[t]))) return false;
   const known = (id: string | null) => id === null || id in ITEMS;

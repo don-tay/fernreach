@@ -27,6 +27,8 @@ export interface QuestProgress {
 
 /** Everything that persists in a save. */
 export interface PlayerState {
+  /** Permanent random ID, stable across sessions (for future parties, buddies and servers). */
+  id: string;
   name: string;
   level: number;
   exp: number;
@@ -56,6 +58,7 @@ export function createPlayer(name: string): PlayerState {
   const inventory = emptyInventory();
   addItem(inventory, 'red_potion', 5);
   return {
+    id: crypto.randomUUID(),
     name,
     level: 1,
     exp: 0,
