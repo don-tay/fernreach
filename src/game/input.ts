@@ -17,7 +17,7 @@ export const KEYMAP: Record<string, Action> = {
 };
 
 /** Keys that toggle UI windows rather than drive the character. */
-export const UI_KEYS = ['KeyI', 'KeyS', 'KeyK', 'KeyE', 'KeyQ', 'Escape'] as const;
+export const UI_KEYS = ['KeyI', 'KeyS', 'KeyK', 'KeyE', 'KeyQ', 'KeyP', 'Enter', 'Escape'] as const;
 export type UiKey = (typeof UI_KEYS)[number];
 
 export class Keyboard {

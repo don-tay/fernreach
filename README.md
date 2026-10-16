@@ -21,9 +21,21 @@ pnpm dev        # http://localhost:5199
 | Three Snails / Recovery / Nimble Feet | A / D / F |
 | Red / Blue Potion | 1 / 2 |
 | Items / Stats / Skills / Equipment / Quests | I / S / K / E / Q |
-| Close windows / menu | Esc |
+| Chat (players on your map) | Enter |
+| Players in your channel | P |
+| Close windows / menu (online settings) | Esc |
 
 Progress autosaves to localStorage on level-up, on map change and every 30 seconds.
+
+## Multiplayer
+
+You play online by default. You can see and chat with other players on the same map; monsters, drops and EXP stay in your own browser.
+
+- Browsers connect directly to each other over WebRTC through [Trystero](https://github.com/dmotz/trystero). Public Nostr relays are used only to introduce players; there is no game server.
+- Public channels Ch 1–3 (20 players each), or a private room code you share with friends. Change them in the menu (Esc).
+- Other players in your room can see your IP address. Choose **Go offline** in the menu to play alone.
+- If the connection fails you keep playing single-player, and the game retries every 30 seconds.
+- `?net=local` connects tabs of the same browser instead (used by the tests); `?net=down` simulates a failed connection.
 
 ## Content
 
@@ -48,7 +60,8 @@ src/data     static definitions: items, monsters, maps, skills, quests
 src/logic    pure, unit-tested game rules; World runs the simulation at a fixed 60 Hz
 src/art      procedural Canvas 2D sprites (swap these to re-skin the game)
 src/game     Phaser scene that renders the World, plus keyboard input
-src/ui       DOM overlay: HUD, windows, dialogs, shop
+src/net      multiplayer: message format, transports (Trystero, local tabs) and the session
+src/ui       DOM overlay: HUD, windows, dialogs, shop, chat
 src/debug    dev-only `window.__maple` hook used by Playwright (excluded from production builds)
 tests        Vitest unit tests
 e2e          Playwright tests

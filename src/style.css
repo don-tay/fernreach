@@ -37,7 +37,7 @@ button:disabled { opacity: 0.45; cursor: default; }
   pointer-events: none;
   overflow: hidden;
 }
-#ui .hud, #ui .win, #ui .modal-layer:not(:empty) { pointer-events: auto; }
+#ui .hud, #ui .win, #ui .chat-input, #ui .modal-layer:not(:empty) { pointer-events: auto; }
 
 .map-name {
   position: absolute;
@@ -53,10 +53,46 @@ button:disabled { opacity: 0.45; cursor: default; }
 .buffs { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; }
 .buff { padding: 3px 8px; border-radius: 8px; background: rgba(40, 90, 40, 0.75); color: #e8ffd8; font-size: 11px; }
 
-.log { position: absolute; left: 8px; bottom: 64px; width: 360px; display: flex; flex-direction: column; gap: 1px; }
+.log { position: absolute; left: 8px; bottom: 92px; width: 360px; display: flex; flex-direction: column; gap: 1px; }
 .msg { color: #fff; font-size: 11px; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
 .msg.gain { color: #fff6a0; }
 .msg.warn { color: #ffb0b0; }
+.msg.chat { color: #ffffff; }
+.msg.chat.self { color: #bfe8ff; }
+
+.net-status {
+  position: absolute;
+  top: 36px;
+  left: 8px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #e8f4ff;
+  font-size: 11px;
+}
+.net-status:empty { display: none; }
+
+.chat-input {
+  position: absolute;
+  left: 8px;
+  bottom: 62px;
+  width: 380px;
+  font: inherit;
+  padding: 4px 8px;
+  border: 1px solid #5a6a9a;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.player-row { display: flex; gap: 8px; padding: 3px 0; border-bottom: 1px solid #c8d0e4; }
+.player-row b { flex: 1; }
+.player-row.me b { color: #c8501a; }
+
+.net-menu { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #b8c0d8; }
+.net-menu .row { margin-bottom: 4px; }
+.net-menu .channels { gap: 4px; }
+.net-menu input { flex: 1; font: inherit; padding: 2px 6px; border: 1px solid #aab2cc; border-radius: 4px; }
+.net-menu .hint { margin: 2px 0 0; color: #6a7090; font-size: 10px; }
 
 /* ------------------------------------------------------------ HUD */
 
@@ -152,6 +188,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .win-inventory { right: 12px; top: 40px; width: 220px; }
 .win-skills { left: 222px; top: 250px; width: 300px; }
 .win-quests { right: 12px; top: 270px; width: 220px; }
+.win-players { left: 12px; top: 60px; width: 260px; }
 
 .row { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
 .row span { flex: 1; color: #4a5070; }
@@ -274,3 +311,4 @@ button:disabled { opacity: 0.45; cursor: default; }
 .new-game input { font: inherit; font-size: 14px; padding: 4px 8px; border: 1px solid #aab2cc; border-radius: 4px; }
 .warn { margin: 0; color: #c8501a; font-size: 11px; }
 .hint { margin: 6px 0 0; color: #5a6080; font-size: 11px; }
+.dialog[data-testid="dialog-menu"] { top: 50px; }

@@ -12,8 +12,12 @@ import { questProgress, questStatus } from '../logic/quests';
 import { TAB_CAPACITY } from '../logic/inventory';
 import type { World, WorldEvent } from '../logic/world';
 import type { UiKey } from '../game/input';
+import { getMap } from '../data/maps';
+import { CHAT_MAX } from '../net/protocol';
+import type { NetEvent, NetSession } from '../net/session';
+import { CHANNELS } from '../net/settings';
 
-type WindowId = 'stats' | 'equip' | 'inventory' | 'skills' | 'quests';
+type WindowId = 'stats' | 'equip' | 'inventory' | 'skills' | 'quests' | 'players';
 type Modal =
   | { type: 'npc'; npc: NpcDef; text?: string }
   | { type: 'shop'; npc: NpcDef }
@@ -28,10 +32,11 @@ interface Message {
 }
 
 const WINDOW_KEYS: Partial<Record<UiKey, WindowId>> = {
-  KeyS: 'stats', KeyE: 'equip', KeyI: 'inventory', KeyK: 'skills', KeyQ: 'quests',
+  KeyS: 'stats', KeyE: 'equip', KeyI: 'inventory', KeyK: 'skills', KeyQ: 'quests', KeyP: 'players',
 };
 const WINDOW_TITLES: Record<WindowId, string> = {
   stats: 'Character Stats', equip: 'Equipment', inventory: 'Item Inventory', skills: 'Skills', quests: 'Quest Log',
+  players: 'Players',
 };
 const EQUIP_LABELS: Record<EquipSlot, string> = { hat: 'Hat', top: 'Top', shoes: 'Shoes', weapon: 'Weapon' };
 const STATS: StatName[] = ['str', 'dex', 'int', 'luk'];
@@ -67,6 +72,9 @@ function describe(item: Item): string {
 export interface UiOptions {
   onSave: () => void;
   onNewGame: () => void;
+  /** Called when the chat box opens, so held movement keys are released. */
+  onChatOpen?: () => void;
+  net?: NetSession | null;
 }
 
 /** DOM overlay for the HUD, windows and dialogs. Re-renders when World.version changes. */
@@ -78,7 +86,9 @@ export class UI {
   private note = '';
   private messages: Message[] = [];
   private renderedVersion = -1;
+  private renderedNetVersion = -1;
   private dirty = true;
+  private chat: HTMLInputElement;
   private hud: HTMLElement;
   private windows: HTMLElement;
   private modalEl: HTMLElement;
@@ -90,9 +100,11 @@ export class UI {
   constructor(private root: HTMLElement, private world: World, private opts: UiOptions) {
     root.innerHTML = `
       <div class="map-name"></div>
+      <div class="net-status" data-testid="net-status"></div>
       <div class="buffs"></div>
       <div class="windows"></div>
       <div class="log"></div>
+      <input class="chat-input" data-testid="chat-input" maxlength="${CHAT_MAX}" placeholder="Say something… (Enter to send, Esc to cancel)" hidden>
       <div class="hud"></div>
       <div class="modal-layer"></div>`;
     this.mapName = root.querySelector('.map-name')!;
@@ -101,6 +113,10 @@ export class UI {
     this.log = root.querySelector('.log')!;
     this.hud = root.querySelector('.hud')!;
     this.modalEl = root.querySelector('.modal-layer')!;
+    this.chat = root.querySelector('.chat-input')!;
+    this.chat.addEventListener('keydown', (e) => this.onChatKey(e));
+    this.chat.addEventListener('blur', () => this.closeChat());
+    opts.net?.on((e) => this.onNetEvent(e));
     this.hud.innerHTML = this.hudTemplate();
     root.addEventListener('click', (e) => this.onClick(e));
     root.addEventListener('dblclick', (e) => this.onDoubleClick(e));
@@ -114,6 +130,10 @@ export class UI {
   }
 
   onKey(key: UiKey): void {
+    if (key === 'Enter') {
+      if (!this.modal) this.openChat();
+      return;
+    }
     if (key === 'Escape') {
       if (this.modal && this.modal.type !== 'death' && this.modal.type !== 'ending') this.setModal(null);
       else if (!this.modal && this.open.size) this.open.clear();
@@ -124,6 +144,37 @@ export class UI {
     if (this.modal) return;
     const win = WINDOW_KEYS[key];
     if (win) this.toggle(win);
+  }
+
+  // ---------------------------------------------------------------- chat
+
+  private openChat(): void {
+    this.opts.onChatOpen?.();
+    this.chat.hidden = false;
+    this.chat.focus();
+  }
+
+  private closeChat(): void {
+    this.chat.value = '';
+    this.chat.hidden = true;
+    this.chat.blur();
+  }
+
+  private onChatKey(e: KeyboardEvent): void {
+    e.stopPropagation();
+    if (e.key === 'Escape') return this.closeChat();
+    if (e.key !== 'Enter' || e.isComposing) return;
+    e.preventDefault();
+    const text = this.chat.value;
+    this.closeChat();
+    if (!text.trim()) return;
+    const err = this.opts.net ? this.opts.net.sendChat(text) : 'Chat is unavailable.';
+    if (err) this.pushMessage(err, 'warn');
+  }
+
+  private onNetEvent(e: NetEvent): void {
+    if (e.type === 'notice') this.pushMessage(e.text, 'info');
+    else this.pushMessage(`${e.name}: ${e.text}${e.offline ? ' (offline)' : ''}`, e.self ? 'chat self' : 'chat');
   }
 
   private toggle(win: WindowId): void {
@@ -162,13 +213,19 @@ export class UI {
       this.messages = this.messages.filter((m) => now - m.at <= MESSAGE_TTL);
       this.renderLog();
     }
-    if (this.dirty || this.renderedVersion !== this.world.version) {
-      this.dirty = false;
+    const net = this.opts.net;
+    const netChanged = !!net && this.renderedNetVersion !== net.version;
+    if (this.dirty || netChanged || this.renderedVersion !== this.world.version) {
       this.renderedVersion = this.world.version;
+      this.renderedNetVersion = net?.version ?? -1;
       this.windows.innerHTML = [...this.open].map((id) => this.windowTemplate(id)).join('');
-      this.modalEl.innerHTML = this.modal ? this.modalTemplate(this.modal) : '';
       this.mapName.textContent = this.world.map.name;
+      // Modals change through clicks; avoid wiping text the player is typing.
+      const typing = this.modalEl.contains(document.activeElement);
+      if (this.dirty || (netChanged && !typing)) this.modalEl.innerHTML = this.modal ? this.modalTemplate(this.modal) : '';
+      this.dirty = false;
     }
+    if (net) this.set('.net-status', net.statusText());
   }
 
   private renderLog(): void {
@@ -246,6 +303,7 @@ export class UI {
       inventory: () => this.inventoryBody(),
       skills: () => this.skillsBody(),
       quests: () => this.questsBody(),
+      players: () => this.playersBody(),
     }[id]();
     return `
       <div class="win win-${id}" data-testid="win-${id}">
@@ -333,6 +391,34 @@ export class UI {
     }).join('');
   }
 
+  private playersBody(): string {
+    const net = this.opts.net;
+    const p = this.world.player;
+    const row = (name: string, level: number, map: string | null, me = false) =>
+      `<div class="player-row ${me ? 'me' : ''}"><b>${esc(name)}</b><span>Lv${level}</span><span>${map ? getMap(map).name : '—'}</span></div>`;
+    const header = `<div class="row"><span>${net ? esc(net.statusText()) : 'Offline'}</span></div>`;
+    if (!net || net.status !== 'online') return `${header}<p class="empty">You're offline. Other players appear when you're connected.</p>`;
+    const others = net.players().map((r) => row(r.profile!.name, r.profile!.level, r.map));
+    return `${header}${row(p.name, p.level, this.world.map.id, true)}${others.join('') || '<p class="empty">Nobody else is here yet.</p>'}`;
+  }
+
+  private netMenu(): string {
+    const net = this.opts.net;
+    if (!net) return '';
+    const online = net.settings.online;
+    const channels = CHANNELS.map((c) => {
+      const active = online && !net.settings.privateCode && net.settings.channel === c;
+      return `<button class="tab ${active ? 'active' : ''}" data-action="net-channel" data-arg="${c}" ${online ? '' : 'disabled'}>Ch ${c}</button>`;
+    }).join('');
+    return `<div class="net-menu" data-testid="net-menu">
+      <div class="row"><span>${esc(net.statusText())}</span>
+        <button data-action="net-online" data-arg="${online ? 'off' : 'on'}">${online ? 'Go offline' : 'Go online'}</button></div>
+      <div class="row channels">${channels}</div>
+      <div class="row"><input id="private-code" maxlength="32" placeholder="Private room code" value="${esc(net.settings.privateCode ?? '')}" ${online ? '' : 'disabled'}>
+        <button data-action="net-private" ${online ? '' : 'disabled'}>Join private</button></div>
+      <p class="hint">Players in your channel can see your IP address. Go offline to play alone.</p></div>`;
+  }
+
   // ---------------------------------------------------------------- modals
 
   private modalTemplate(m: Modal): string {
@@ -355,14 +441,15 @@ export class UI {
         ['Erase and start over', 'new-game'], ['Cancel', 'menu'],
       ], 'menu');
     }
-    return this.dialog('Menu', `
+    return this.dialog('Menu', `${this.netMenu()}
       <table class="controls">
         <tr><td>Arrows</td><td>Move · climb ropes · ↑ portals/NPCs</td></tr>
         <tr><td>Space</td><td>Jump (↓ + Space to drop down)</td></tr>
         <tr><td>C</td><td>Attack</td></tr><tr><td>Z</td><td>Pick up</td></tr>
         <tr><td>A / D / F</td><td>Three Snails / Recovery / Nimble Feet</td></tr>
         <tr><td>1 / 2</td><td>Red / Blue Potion</td></tr>
-        <tr><td>I S K E Q</td><td>Items · Stats · Skills · Equipment · Quests</td></tr>
+        <tr><td>I S K E Q P</td><td>Items · Stats · Skills · Equipment · Quests · Players</td></tr>
+        <tr><td>Enter</td><td>Chat with players on this map</td></tr>
       </table>`, [['Save game', 'save'], ['New game', 'confirm-new'], ['Close', 'close-modal']], 'menu');
   }
 
@@ -480,6 +567,17 @@ export class UI {
         const err = w.completeQuest(arg as QuestId);
         if (err) this.note = err;
         else if (this.modal?.type === 'npc') this.modal = { ...this.modal, text: this.rewardText(arg as QuestId) };
+        return;
+      }
+      case 'net-online':
+        this.opts.net?.setOnline(arg === 'on');
+        return;
+      case 'net-channel':
+        this.opts.net?.setChannel(Number(arg));
+        return;
+      case 'net-private': {
+        const code = (this.root.querySelector('#private-code') as HTMLInputElement | null)?.value ?? '';
+        this.opts.net?.joinPrivate(code);
         return;
       }
       case 'travel': {

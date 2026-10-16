@@ -5,12 +5,28 @@ import { VIEW_H, VIEW_W, WorldScene } from './game/WorldScene';
 import { createPlayer } from './logic/player';
 import { createRng } from './logic/rng';
 import { clearSave, load, save } from './logic/save';
+import { poseOf } from './logic/pose';
 import { World } from './logic/world';
+import type { LocalPlayer } from './net/session';
+import { NetSession } from './net/session';
+import { loadSettings, saveSettings } from './net/settings';
+import type { TransportFactory } from './net/transport';
+import { DownTransport, LocalTransport } from './net/transport';
+import { TrysteroTransport } from './net/trystero';
 import { UI } from './ui/ui';
 
 const AUTOSAVE_MS = 30_000;
 const params = new URLSearchParams(location.search);
 const seed = Number(params.get('seed') ?? Date.now()) || 1;
+const NET_TICK_MS = 50;
+
+/** `?net=local` connects tabs of this browser; `?net=down` simulates a failed connection. */
+function transportFactory(): TransportFactory {
+  const mode = params.get('net');
+  if (mode === 'local') return () => new LocalTransport();
+  if (mode === 'down') return () => new DownTransport();
+  return () => new TrysteroTransport();
+}
 
 function showTitle(): void {
   const existing = load(localStorage);
@@ -25,7 +41,8 @@ function showTitle(): void {
         <button class="${existing ? '' : 'primary'}" data-action="new" data-testid="new-game">New Game</button>
       </div>
       ${existing ? '<p class="warn">Starting a new game erases your current character.</p>' : ''}
-      <p class="hint">Arrows move · Space jump · C attack · Z pick up · ↑ portals &amp; NPCs</p>
+      <p class="hint">Arrows move · Space jump · C attack · Z pick up · ↑ portals &amp; NPCs · Enter chat</p>
+      <p class="hint">You'll play online by default: players in your channel can see your IP address. You can go offline from the menu (Esc).</p>
     </div>`;
   title.addEventListener('click', (e) => {
     const action = (e.target as HTMLElement).closest<HTMLElement>('[data-action]')?.dataset.action;
@@ -45,8 +62,22 @@ function start(player: ReturnType<typeof createPlayer>): void {
   doSave();
 
   const keyboard = new Keyboard(window);
+  const local = (): LocalPlayer => {
+    const p = world.player;
+    const b = world.pr.body;
+    return {
+      playerId: p.id, name: p.name, level: p.level, look: { weapon: p.equipment.weapon, hat: p.equipment.hat },
+      map: world.map.id, x: b.x, y: b.y, facing: world.pr.facing, pose: poseOf(world.pr),
+    };
+  };
+  const net = new NetSession(transportFactory(), loadSettings(localStorage), local, (s) => saveSettings(localStorage, s));
+  net.start();
+  setInterval(() => net.tick(), NET_TICK_MS);
+
   const uiRoot = document.getElementById('ui')!;
   const ui = new UI(uiRoot, world, {
+    net,
+    onChatOpen: () => keyboard.held.clear(),
     onSave: doSave,
     onNewGame: () => {
       clearSave(localStorage);
@@ -69,7 +100,7 @@ function start(player: ReturnType<typeof createPlayer>): void {
     backgroundColor: '#8fd3ff',
     pixelArt: false,
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-    scene: [new WorldScene(world, keyboard)],
+    scene: [new WorldScene(world, keyboard, net)],
     audio: { noAudio: true },
   });
 
@@ -86,7 +117,7 @@ function start(player: ReturnType<typeof createPlayer>): void {
   fitUi();
 
   if (import.meta.env.DEV) {
-    import('./debug/testHook').then((m) => m.installTestHook(world, doSave));
+    import('./debug/testHook').then((m) => m.installTestHook(world, doSave, net));
   }
 }
 

@@ -1,12 +1,13 @@
 import { getMap } from '../data/maps';
 import { addItem } from '../logic/inventory';
 import type { World } from '../logic/world';
+import type { NetSession } from '../net/session';
 
 /**
  * Dev/test-only hook for Playwright: read game state and set up scenarios quickly.
  * Never included in production builds.
  */
-export function installTestHook(world: World, save: () => void): void {
+export function installTestHook(world: World, save: () => void, net: NetSession): void {
   const hook = {
     ready: true,
     world,
@@ -56,6 +57,15 @@ export function installTestHook(world: World, save: () => void): void {
       return true;
     },
     save,
+    net,
+    netState: () => ({
+      status: net.status,
+      room: net.roomLabel,
+      players: net.players().map((r) => ({
+        name: r.profile!.name, level: r.profile!.level, map: r.map, pose: r.pose, bubble: net.bubbleText(r.bubble),
+        ...net.position(r),
+      })),
+    }),
   };
   (window as unknown as { __maple: typeof hook }).__maple = hook;
 }
