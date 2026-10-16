@@ -1,5 +1,4 @@
 import * as Phaser from 'phaser';
-import type { CharFrame } from '../art/draw';
 import {
   CHAR_FRAMES, drawCharacter, drawHatOverlay, drawHills, drawItemIcon, drawMapLayer, drawMeso, drawMob, drawPortal, drawSky,
   drawWeapon,
@@ -7,21 +6,20 @@ import {
 import { ITEMS } from '../data/items';
 import { MOBS } from '../data/mobs';
 import { MAPS } from '../data/maps';
+import { poseOf } from '../logic/pose';
 import { npcMarker } from '../logic/quests';
 import type { World, WorldEvent } from '../logic/world';
 import { PLAYER_HEIGHT } from '../logic/world';
+import type { NetSession } from '../net/session';
+import { CharacterView, NAME_STYLE, swingProgress } from './CharacterView';
 import type { Keyboard } from './input';
 
 export const VIEW_W = 800;
 export const VIEW_H = 600;
 const STEP = 1 / 60;
-const ATTACK_ANIM = 0.35;
+const REMOTE_TAG = '#9ad8ff';
 
 const PLAYER_LOOK = { hair: '#6a3a1a', shirt: '#f4f4f4', pants: '#3a5aa0', shoes: '#a87a4a' };
-const NAME_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
-  fontFamily: 'Verdana, sans-serif', fontSize: '11px', color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.55)',
-  padding: { x: 4, y: 1 },
-};
 
 interface MobView {
   sprite: Phaser.GameObjects.Image;
@@ -37,22 +35,17 @@ export class WorldScene extends Phaser.Scene {
   private dropViews = new Map<number, Phaser.GameObjects.Image>();
   private projectileViews = new Map<number, Phaser.GameObjects.Image>();
   private npcMarkers = new Map<string, Phaser.GameObjects.Text>();
-  private player!: Phaser.GameObjects.Image;
-  private weapon!: Phaser.GameObjects.Image;
-  private hat!: Phaser.GameObjects.Image;
-  private nameTag!: Phaser.GameObjects.Text;
+  private me!: CharacterView;
+  private remoteViews = new Map<string, CharacterView>();
   private mapDirty = true;
 
-  constructor(private world: World, private keyboard: Keyboard) {
+  constructor(private world: World, private keyboard: Keyboard, private net: NetSession | null = null) {
     super('world');
   }
 
   create(): void {
     this.registerTextures();
-    this.player = this.add.image(0, 0, 'player_stand').setOrigin(0.5, 1).setDepth(7);
-    this.weapon = this.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.9).setDepth(7.1);
-    this.hat = this.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 1).setDepth(7.2);
-    this.nameTag = this.add.text(0, 0, this.world.player.name, NAME_STYLE).setOrigin(0.5, 0).setDepth(7);
+    this.me = new CharacterView(this, this.world.player.name, 7);
     const off = this.world.on((e) => this.onEvent(e));
     this.events.once('shutdown', off);
   }
@@ -163,6 +156,7 @@ export class WorldScene extends Phaser.Scene {
   private render(t: number): void {
     const w = this.world;
     this.renderPlayer(t);
+    this.renderRemotes(t);
     this.renderMobs(t);
     this.renderDrops(t);
     this.renderProjectiles();
@@ -179,37 +173,41 @@ export class WorldScene extends Phaser.Scene {
 
   private renderPlayer(t: number): void {
     const pr = this.world.pr;
-    const b = pr.body;
-    let frame: CharFrame = 'stand';
-    if (pr.climbing >= 0) frame = 'climb';
-    else if (pr.attackTimer > 0) frame = 'attack';
-    else if (!b.onGround) frame = 'jump';
-    else if (Math.abs(b.vx) > 1) frame = Math.floor(t / 0.15) % 2 ? 'walk1' : 'walk2';
-    const flip = pr.facing < 0;
-    const x = Math.round(b.x);
-    const y = Math.round(b.y);
-    const alpha = pr.dead ? 0.5 : pr.invuln > 0 && Math.floor(t * 12) % 2 ? 0.45 : 1;
-    const bob = frame === 'climb' ? Math.floor(b.y / 10) % 2 : 0;
-
-    this.player.setTexture(`player_${frame}`).setPosition(x, y).setFlipX(flip).setAlpha(alpha);
-    this.player.setAngle(pr.dead ? (flip ? -90 : 90) : 0);
-    if (frame === 'climb') this.player.setFlipX(bob === 1);
-
     const eq = this.world.player.equipment;
-    this.hat.setVisible(!!eq.hat && !pr.dead && frame !== 'climb');
-    if (eq.hat) this.hat.setTexture(`hat_${eq.hat}`).setPosition(x, y).setFlipX(flip).setAlpha(alpha);
+    this.me.update({
+      x: pr.body.x, y: pr.body.y, pose: poseOf(pr), facing: pr.facing, t,
+      look: { weapon: eq.weapon, hat: eq.hat },
+      alpha: pr.dead ? 0.5 : pr.invuln > 0 && Math.floor(t * 12) % 2 ? 0.45 : 1,
+      attackProgress: swingProgress(pr.attackTimer),
+      bubble: this.net?.bubbleText(this.net.selfBubble) ?? null,
+    });
+  }
 
-    const showWeapon = !!eq.weapon && frame !== 'climb' && !pr.dead;
-    this.weapon.setVisible(showWeapon);
-    if (showWeapon) {
-      const s = flip ? -1 : 1;
-      const attacking = pr.attackTimer > 0;
-      const progress = 1 - pr.attackTimer / ATTACK_ANIM;
-      const angle = attacking ? -110 + 190 * progress : 25;
-      const [hx, hy] = attacking ? [16, -22] : [9, -15];
-      this.weapon.setTexture(`weapon_${eq.weapon}`).setPosition(x + hx * s, y + hy).setAngle(angle * s).setFlipX(flip).setAlpha(alpha);
+  /** Other players on this map, drawn just behind the local player. */
+  private renderRemotes(t: number): void {
+    const visible = this.net?.visible(this.world.map.id) ?? [];
+    const seen = new Set<string>();
+    for (const r of visible) {
+      const pos = this.net!.position(r);
+      if (!pos || !r.profile) continue;
+      seen.add(r.peerId);
+      let view = this.remoteViews.get(r.peerId);
+      if (!view) {
+        view = new CharacterView(this, '', 6.8, REMOTE_TAG);
+        this.remoteViews.set(r.peerId, view);
+      }
+      view.setName(`${r.profile.name} (Lv${r.profile.level})`);
+      view.update({
+        x: pos.x, y: pos.y, pose: r.pose, facing: r.facing, look: r.profile.look, alpha: r.pose === 'dead' ? 0.5 : 1,
+        attackProgress: (t % 0.35) / 0.35, bubble: this.net!.bubbleText(r.bubble), t,
+      });
     }
-    this.nameTag.setPosition(x, y + 3);
+    for (const [id, view] of this.remoteViews) {
+      if (!seen.has(id)) {
+        view.destroy();
+        this.remoteViews.delete(id);
+      }
+    }
   }
 
   private renderMobs(t: number): void {
