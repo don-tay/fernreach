@@ -53,6 +53,10 @@ You play online by default. You can see and chat with other players on the same 
 | `pnpm test` | Vitest unit tests (game logic) |
 | `pnpm test:e2e` | Playwright browser smoke tests (starts the dev server) |
 
+## Deploy
+
+Pushing to `main` runs the tests and, if they pass, publishes the game to GitHub Pages (`.github/workflows/ci.yml`). In the repository settings, set **Pages → Source** to **GitHub Actions**. The build picks up the right base path (`/<repo>/` or a custom domain) automatically.
+
 ## Layout
 
 ```

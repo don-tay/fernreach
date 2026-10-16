@@ -1,7 +1,8 @@
 import type { Room } from 'trystero';
 import type { Transport } from './transport';
 
-const APP_ID = 'maple-island-mvp';
+/** Unique to this game, and separate for local development and the deployed site so test runs never mix with real players. */
+const APP_ID = `don-tay.maple-browser.${import.meta.env.PROD ? 'live' : 'dev'}`;
 
 type TrysteroModule = typeof import('trystero');
 
