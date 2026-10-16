@@ -1,8 +1,8 @@
 {
-  "name": "maple-browser",
+  "name": "fernreach",
   "version": "0.1.0",
   "private": true,
-  "description": "A MapleStory-inspired single-player browser game (MVP).",
+  "description": "Fernreach: a cozy side-scrolling browser adventure with simple peer-to-peer multiplayer.",
   "type": "module",
   "scripts": {
     "dev": "vite",

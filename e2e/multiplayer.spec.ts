@@ -23,20 +23,20 @@ test('players see each other and follow each other’s movement', async ({ conte
 
 test('players only see each other on the same map', async ({ context }) => {
   const [alice, bob] = await twoPlayers(context);
-  await bob.evaluate(() => window.__maple.warp('snail_hunting_1'));
+  await bob.evaluate(() => window.__game.warp('shellgrass_meadow_1'));
   await expect(alice.locator('.log')).toContainText('Bob left the map.');
   await expect(alice.getByTestId('net-status')).toHaveText('● Ch 1 · 0 nearby');
-  expect((await netState(alice)).players[0].map).toBe('snail_hunting_1');
-  await alice.evaluate(() => window.__maple.warp('snail_hunting_1'));
+  expect((await netState(alice)).players[0].map).toBe('shellgrass_meadow_1');
+  await alice.evaluate(() => window.__game.warp('shellgrass_meadow_1'));
   await expect(alice.getByTestId('net-status')).toHaveText('● Ch 1 · 1 nearby');
 });
 
 test('chat shows in the log and as a speech bubble', async ({ context }) => {
   const [alice, bob] = await twoPlayers(context);
-  await chat(bob, 'hello maplers');
-  await expect(alice.locator('.log')).toContainText('Bob: hello maplers');
-  await expect(bob.locator('.log')).toContainText('Bob: hello maplers');
-  expect((await netState(alice)).players[0].bubble).toBe('hello maplers');
+  await chat(bob, 'hello friends');
+  await expect(alice.locator('.log')).toContainText('Bob: hello friends');
+  await expect(bob.locator('.log')).toContainText('Bob: hello friends');
+  expect((await netState(alice)).players[0].bubble).toBe('hello friends');
   // Game keys are ignored while typing.
   const x = (await state(bob)).x;
   await bob.keyboard.press('Enter');
@@ -64,12 +64,12 @@ test('a player who leaves disappears', async ({ context }) => {
 
 test('the Players window lists everyone in the channel', async ({ context }) => {
   const [alice, bob] = await twoPlayers(context);
-  await bob.evaluate(() => window.__maple.warp('snail_hunting_1'));
+  await bob.evaluate(() => window.__game.warp('shellgrass_meadow_1'));
   await alice.keyboard.press('p');
   const win = alice.getByTestId('win-players');
   await expect(win).toContainText('Alice');
   await expect(win).toContainText('Bob');
-  await expect(win).toContainText('Snail Hunting Ground I');
+  await expect(win).toContainText('Shellgrass Meadow I');
 });
 
 test('going offline from the menu hides other players and chat stays local', async ({ context }) => {

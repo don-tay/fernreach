@@ -33,11 +33,11 @@ function showTitle(): void {
   const title = document.getElementById('title')!;
   title.innerHTML = `
     <div class="title-card">
-      <div class="logo">Maple<span>Island</span></div>
-      <p class="tagline">A MapleStory-inspired adventure</p>
+      <div class="logo">Fern<span>reach</span></div>
+      <p class="tagline">A cozy side-scrolling adventure</p>
       ${existing ? `<button class="primary" data-action="continue" data-testid="continue">Continue — ${existing.name} (Lv${existing.level})</button>` : ''}
       <div class="new-game">
-        <input id="name" maxlength="12" placeholder="Character name" value="${existing ? '' : 'Mapler'}" autocomplete="off">
+        <input id="name" maxlength="12" placeholder="Character name" value="${existing ? '' : 'Wanderer'}" autocomplete="off">
         <button class="${existing ? '' : 'primary'}" data-action="new" data-testid="new-game">New Game</button>
       </div>
       ${existing ? '<p class="warn">Starting a new game erases your current character.</p>' : ''}
@@ -48,7 +48,7 @@ function showTitle(): void {
     const action = (e.target as HTMLElement).closest<HTMLElement>('[data-action]')?.dataset.action;
     if (action === 'continue' && existing) start(existing);
     if (action === 'new') {
-      const name = (document.getElementById('name') as HTMLInputElement).value.trim() || 'Mapler';
+      const name = (document.getElementById('name') as HTMLInputElement).value.trim() || 'Wanderer';
       clearSave(localStorage);
       start(createPlayer(name));
     }

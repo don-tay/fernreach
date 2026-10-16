@@ -1,6 +1,6 @@
 import type { Action, Input } from '../logic/world';
 
-/** Classic MapleStory-style default key bindings (fixed for the MVP). */
+/** Default key bindings, in the style of classic side-scrolling MMOs (fixed for the MVP). */
 export const KEYMAP: Record<string, Action> = {
   ArrowLeft: 'left',
   ArrowRight: 'right',
@@ -9,11 +9,11 @@ export const KEYMAP: Record<string, Action> = {
   Space: 'jump',
   KeyC: 'attack',
   KeyZ: 'pickup',
-  KeyA: 'three_snails',
-  KeyD: 'recovery',
-  KeyF: 'nimble_feet',
-  Digit1: 'red_potion',
-  Digit2: 'blue_potion',
+  KeyA: 'shell_toss',
+  KeyD: 'second_wind',
+  KeyF: 'quickstep',
+  Digit1: 'berry_tonic',
+  Digit2: 'dew_tonic',
 };
 
 /** Keys that toggle UI windows rather than drive the character. */

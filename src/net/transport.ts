@@ -34,7 +34,7 @@ export class LocalTransport extends BaseTransport {
   private readonly id = crypto.randomUUID();
 
   join(roomId: string): void {
-    this.channel = new BroadcastChannel(`maple-local-${roomId}`);
+    this.channel = new BroadcastChannel(`fernreach-local-${roomId}`);
     this.channel.onmessage = (e: MessageEvent<LocalEnvelope>) => this.receive(e.data);
     this.post({ kind: 'hello' });
     addEventListener('pagehide', this.bye);

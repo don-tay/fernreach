@@ -253,14 +253,14 @@ export class UI {
     this.set('.bar.mp .val', `${p.mp} / ${p.maxMp}`);
     this.set('.bar.exp .fill', `${expPct}%`, 'width');
     this.set('.bar.exp .val', p.level >= MAX_LEVEL ? 'MAX' : `${p.exp} / ${need} [${expPct.toFixed(2)}%]`);
-    this.set('.slot-red .qty', String(this.world.countItem('red_potion')));
-    this.set('.slot-blue .qty', String(this.world.countItem('blue_potion')));
+    this.set('.slot-red .qty', String(this.world.countItem('berry_tonic')));
+    this.set('.slot-blue .qty', String(this.world.countItem('dew_tonic')));
     for (const id of SKILL_IDS) this.set(`.slot-${id} .qty`, `Lv${p.skills[id]}`);
 
     const pr = this.world.pr;
     const buffs = [
-      pr.recovery && `Recovery ${Math.ceil(pr.recovery.remaining)}s`,
-      pr.nimble && `Nimble Feet ${Math.ceil(pr.nimble.remaining)}s`,
+      pr.secondWind && `Second Wind ${Math.ceil(pr.secondWind.remaining)}s`,
+      pr.quickstep && `Quickstep ${Math.ceil(pr.quickstep.remaining)}s`,
     ].filter(Boolean) as string[];
     const html = buffs.map((b) => `<div class="buff">${b}</div>`).join('');
     if (this.hudCache.get('buffs') !== html) {
@@ -278,14 +278,14 @@ export class UI {
     const btn = (win: WindowId, label: string, key: string) =>
       `<button data-action="toggle" data-win="${win}" title="${WINDOW_TITLES[win]} (${key})">${label}</button>`;
     return `
-      <div class="hud-id"><span class="lv">Lv.<b></b></span><span class="job">Beginner</span><span class="pname">${esc(p.name)}</span></div>
+      <div class="hud-id"><span class="lv">Lv.<b></b></span><span class="job">Novice</span><span class="pname">${esc(p.name)}</span></div>
       <div class="bars">${bar('hp', 'HP')}${bar('mp', 'MP')}${bar('exp', 'EXP')}</div>
       <div class="quickslots">
-        ${slot('slot-red', '1', icon('red_potion'))}
-        ${slot('slot-blue', '2', icon('blue_potion'))}
-        ${slot('slot-three_snails', 'A', `<span class="skill-badge">3S</span>`)}
-        ${slot('slot-recovery', 'D', `<span class="skill-badge">Rc</span>`)}
-        ${slot('slot-nimble_feet', 'F', `<span class="skill-badge">NF</span>`)}
+        ${slot('slot-red', '1', icon('berry_tonic'))}
+        ${slot('slot-blue', '2', icon('dew_tonic'))}
+        ${slot('slot-shell_toss', 'A', `<span class="skill-badge">ST</span>`)}
+        ${slot('slot-second_wind', 'D', `<span class="skill-badge">SW</span>`)}
+        ${slot('slot-quickstep', 'F', `<span class="skill-badge">QS</span>`)}
       </div>
       <div class="hud-buttons">
         ${btn('stats', 'Stat', 'S')}${btn('equip', 'Equip', 'E')}${btn('inventory', 'Item', 'I')}
@@ -320,7 +320,7 @@ export class UI {
       `<div class="row"><span>${s.toUpperCase()}</span><b data-testid="stat-${s}">${p[s]}</b>
         <button class="plus" data-action="ap" data-stat="${s}" ${p.ap ? '' : 'disabled'} data-testid="ap-${s}">+</button></div>`;
     return `
-      ${row('Name', esc(p.name))}${row('Job', 'Beginner')}${row('Level', p.level)}
+      ${row('Name', esc(p.name))}${row('Job', 'Novice')}${row('Level', p.level)}
       ${row('HP', `${p.hp} / ${p.maxHp}`)}${row('MP', `${p.mp} / ${p.maxMp}`)}
       <div class="sep"></div>
       <div class="row ap"><span>Ability Points</span><b data-testid="ap">${p.ap}</b></div>
@@ -358,7 +358,7 @@ export class UI {
         ${icon(s.itemId)}${item.tab === 'equip' ? '' : `<span class="qty">${s.qty}</span>`}</div>`;
     }).join('');
     return `<div class="tabs">${tabs}</div><div class="grid">${slots}</div>
-      <div class="mesos"><span class="meso-icon"></span><b data-testid="mesos">${this.world.player.mesos.toLocaleString()}</b> mesos</div>`;
+      <div class="acorns"><span class="acorn-icon"></span><b data-testid="acorns">${this.world.player.acorns.toLocaleString()}</b> acorns</div>`;
   }
 
   private skillsBody(): string {
@@ -425,16 +425,16 @@ export class UI {
     if (m.type === 'npc') return this.npcTemplate(m.npc, m.text);
     if (m.type === 'shop') return this.shopTemplate(m.npc);
     if (m.type === 'death') {
-      return this.dialog('Notice', '<p>You have died. You will return to Mushroom Town.</p>', [['OK', 'respawn']], 'death');
+      return this.dialog('Notice', '<p>You have died. You will return to Capwood.</p>', [['OK', 'respawn']], 'death');
     }
     if (m.type === 'ending') {
       const p = this.world.player;
       return `<div class="ending" data-testid="ending">
         <h1>Bon Voyage!</h1>
-        <p>${esc(p.name)} boards Shanks' ship and sets sail for Victoria Island.</p>
-        <p class="big">Thanks for playing the Maple Island MVP!</p>
-        <p>Level ${p.level} · ${p.mesos.toLocaleString()} mesos · ${QUEST_IDS.filter((q) => questStatus(p, q) === 'done').length}/${QUEST_IDS.length} quests</p>
-        <button data-action="keep-playing">Keep playing on Maple Island</button></div>`;
+        <p>${esc(p.name)} boards Captain Merrow's ship and sets sail for the Mainland.</p>
+        <p class="big">Thanks for playing the Fernreach MVP!</p>
+        <p>Level ${p.level} · ${p.acorns.toLocaleString()} acorns · ${QUEST_IDS.filter((q) => questStatus(p, q) === 'done').length}/${QUEST_IDS.length} quests</p>
+        <button data-action="keep-playing">Keep playing on Fernreach</button></div>`;
     }
     if (m.confirmNew) {
       return this.dialog('New Game', '<p>Start over? Your current character will be erased.</p>', [
@@ -446,8 +446,8 @@ export class UI {
         <tr><td>Arrows</td><td>Move · climb ropes · ↑ portals/NPCs</td></tr>
         <tr><td>Space</td><td>Jump (↓ + Space to drop down)</td></tr>
         <tr><td>C</td><td>Attack</td></tr><tr><td>Z</td><td>Pick up</td></tr>
-        <tr><td>A / D / F</td><td>Three Snails / Recovery / Nimble Feet</td></tr>
-        <tr><td>1 / 2</td><td>Red / Blue Potion</td></tr>
+        <tr><td>A / D / F</td><td>Shell Toss / Second Wind / Quickstep</td></tr>
+        <tr><td>1 / 2</td><td>Berry / Dew Tonic</td></tr>
         <tr><td>I S K E Q P</td><td>Items · Stats · Skills · Equipment · Quests · Players</td></tr>
         <tr><td>Enter</td><td>Chat with players on this map</td></tr>
       </table>`, [['Save game', 'save'], ['New game', 'confirm-new'], ['Close', 'close-modal']], 'menu');
@@ -471,8 +471,8 @@ export class UI {
     if (npc.kind === 'shop') return say(npc.greeting, [['Open shop', 'open-shop'], ['Close', 'close-modal']]);
     if (npc.kind === 'travel') {
       return p.level >= MAX_LEVEL
-        ? say("Ahoy, you look ready for the big world! Shall we set sail for Victoria Island?", [['Set sail!', 'travel'], ['Not yet', 'close-modal']])
-        : say(`${npc.greeting} Come back when you're level ${MAX_LEVEL} and I'll take you to Victoria Island.`, [['Close', 'close-modal']]);
+        ? say("Ahoy, you look ready for the wide world! Shall we set sail for the Mainland?", [['Set sail!', 'travel'], ['Not yet', 'close-modal']])
+        : say(`${npc.greeting} Come back when you're level ${MAX_LEVEL} and I'll take you to the Mainland.`, [['Close', 'close-modal']]);
     }
     const id = QUEST_IDS.find((q) => QUESTS[q].npcId === npc.id)!;
     const q = QUESTS[id];
@@ -516,7 +516,7 @@ export class UI {
         <div class="col"><h3>Buy</h3><div class="list">${buy}</div></div>
         <div class="col"><h3>Sell</h3><div class="tabs">${tabs}</div><div class="list">${sell}</div></div>
       </div>
-      <div class="shop-foot"><span class="meso-icon"></span><b data-testid="shop-mesos">${p.mesos.toLocaleString()}</b> mesos
+      <div class="shop-foot"><span class="acorn-icon"></span><b data-testid="shop-acorns">${p.acorns.toLocaleString()}</b> acorns
         ${this.note ? `<span class="note">${esc(this.note)}</span>` : ''}
         <button data-action="close-modal">Leave</button></div></div>`;
   }
@@ -581,7 +581,7 @@ export class UI {
         return;
       }
       case 'travel': {
-        const err = w.travelToVictoria();
+        const err = w.sailToMainland();
         if (err) this.note = err;
         return;
       }
@@ -592,7 +592,7 @@ export class UI {
     const q = QUESTS[id];
     const rewards = [
       `${q.reward.exp} EXP`,
-      q.reward.mesos ? `${q.reward.mesos} mesos` : '',
+      q.reward.acorns ? `${q.reward.acorns} acorns` : '',
       ...(q.reward.items ?? []).map((r) => `${getItem(r.itemId).name} ×${r.qty}`),
     ].filter(Boolean);
     return `${q.text.complete}<br><br><b>Rewards:</b> ${rewards.join(', ')}`;

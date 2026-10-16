@@ -1,4 +1,4 @@
-export type QuestId = 'snail_shells' | 'orange_mushrooms';
+export type QuestId = 'shell_garden' | 'bouncecap_trouble';
 
 export interface QuestDef {
   id: QuestId;
@@ -7,35 +7,35 @@ export interface QuestDef {
   minLevel: number;
   /** Either collect items (consumed on completion) or kill monsters. */
   goal: { type: 'collect'; itemId: string; count: number } | { type: 'kill'; mobId: string; count: number };
-  reward: { exp: number; mesos?: number; items?: { itemId: string; qty: number }[] };
+  reward: { exp: number; acorns?: number; items?: { itemId: string; qty: number }[] };
   text: { offer: string; progress: string; complete: string };
 }
 
 export const QUESTS: Record<QuestId, QuestDef> = {
-  snail_shells: {
-    id: 'snail_shells',
-    name: "Mai's Snail Shells",
-    npcId: 'mai',
+  shell_garden: {
+    id: 'shell_garden',
+    name: "Pella's Shell Garden",
+    npcId: 'pella',
     minLevel: 1,
-    goal: { type: 'collect', itemId: 'snail_shell', count: 10 },
-    reward: { exp: 50, items: [{ itemId: 'red_potion', qty: 10 }] },
+    goal: { type: 'collect', itemId: 'mossy_shell', count: 10 },
+    reward: { exp: 40, items: [{ itemId: 'berry_tonic', qty: 10 }] },
     text: {
-      offer: "Hi there, adventurer! I'm making a little shell garden, but snails keep wandering off. Could you bring me 10 Snail Shells from the hunting ground to the east?",
-      progress: "Still collecting? Snails live just east of town. I need 10 Snail Shells.",
-      complete: 'Wow, 10 shiny shells! Thank you so much. Here, take these potions for your trouble.',
+      offer: "Oh, hello! I'm lining my garden path with shells, but I've run out. Could you bring me 10 Mossy Shells? Shellbugs carry them out in Shellgrass Meadow, just east of here.",
+      progress: 'Any luck? Shellbugs roam Shellgrass Meadow to the east. I need 10 Mossy Shells.',
+      complete: 'Ten lovely mossy shells! My path is going to sparkle. Please take these tonics for your trouble.',
     },
   },
-  orange_mushrooms: {
-    id: 'orange_mushrooms',
-    name: 'Mushroom Menace',
-    npcId: 'yoona',
+  bouncecap_trouble: {
+    id: 'bouncecap_trouble',
+    name: 'Bouncecap Trouble',
+    npcId: 'hazel',
     minLevel: 5,
-    goal: { type: 'kill', mobId: 'orange_mushroom', count: 15 },
-    reward: { exp: 300, mesos: 500, items: [{ itemId: 'wooden_club', qty: 1 }] },
+    goal: { type: 'kill', mobId: 'bouncecap', count: 15 },
+    reward: { exp: 320, acorns: 450, items: [{ itemId: 'oak_cudgel', qty: 1 }] },
     text: {
-      offer: 'Orange Mushrooms have been stomping around near Amherst. Could you hunt 15 of them for me? I will make it worth your while.',
-      progress: 'The Orange Mushrooms are past the Snail Hunting Grounds, near Amherst. Hunt 15 of them!',
-      complete: "You did it! The road to Amherst is safe again. Please take this club — you've earned it.",
+      offer: "Bouncecaps have been bounding all over Briarwood Trail and trampling the travellers' path. Could you clear out 15 of them? I'll make it worth your while.",
+      progress: 'Briarwood Trail is past the second meadow. Clear out 15 Bouncecaps!',
+      complete: 'The trail is quiet again — thank you! Take this cudgel; it served me well once.',
     },
   },
 };

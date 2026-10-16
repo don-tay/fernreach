@@ -7,7 +7,7 @@ import { getMob } from '../data/mobs';
 import type { QuestId } from '../data/quests';
 import type { SkillId } from '../data/skills';
 import {
-  NIMBLE_DURATION, NIMBLE_SPEED, RECOVERY_DURATION, RECOVERY_HEAL, RECOVERY_INTERVAL, SKILLS, THREE_SNAILS_DAMAGE,
+  QUICKSTEP_DURATION, QUICKSTEP_SPEED, SECOND_WIND_DURATION, SECOND_WIND_HEAL, SECOND_WIND_INTERVAL, SKILLS, SHELL_TOSS_DAMAGE,
 } from '../data/skills';
 import { derive, rollMobDamage, rollPlayerDamage } from './combat';
 import { addItem, canAdd, countItem, removeAt } from './inventory';
@@ -22,7 +22,7 @@ import type { Rng } from './rng';
 
 export type Action =
   | 'left' | 'right' | 'up' | 'down' | 'jump' | 'attack' | 'pickup'
-  | 'three_snails' | 'recovery' | 'nimble_feet' | 'red_potion' | 'blue_potion';
+  | 'shell_toss' | 'second_wind' | 'quickstep' | 'berry_tonic' | 'dew_tonic';
 
 export interface Input {
   held: ReadonlySet<Action>;
@@ -68,8 +68,8 @@ export interface PlayerRuntime {
   pickupCooldown: number;
   regenTimer: number;
   dead: boolean;
-  recovery: { remaining: number; tick: number; level: number } | null;
-  nimble: { remaining: number; level: number } | null;
+  secondWind: { remaining: number; tick: number; level: number } | null;
+  quickstep: { remaining: number; level: number } | null;
 }
 
 export interface Mob {
@@ -98,7 +98,7 @@ export interface DropEntity {
   settled: boolean;
   age: number;
   itemId?: string;
-  mesos?: number;
+  acorns?: number;
 }
 
 export interface Projectile {
@@ -129,7 +129,7 @@ export class World {
     this.pr = {
       body: createBody(player.x, player.y, PLAYER_HALF_WIDTH),
       facing: 1, climbing: -1, attackTimer: 0, attackCooldown: 0, invuln: 0, knockTimer: 0, pickupCooldown: 0,
-      regenTimer: 0, dead: false, recovery: null, nimble: null,
+      regenTimer: 0, dead: false, secondWind: null, quickstep: null,
     };
     if (player.hp <= 0) {
       player.hp = Math.min(RESPAWN_HP, player.maxHp);
@@ -211,7 +211,7 @@ export class World {
   }
 
   get speed(): number {
-    return WALK_SPEED * (1 + (this.pr.nimble ? NIMBLE_SPEED[this.pr.nimble.level - 1] : 0) / 100);
+    return WALK_SPEED * (1 + (this.pr.quickstep ? QUICKSTEP_SPEED[this.pr.quickstep.level - 1] : 0) / 100);
   }
 
   private updatePlayer(dt: number, input: Input): void {
@@ -274,11 +274,11 @@ export class World {
       if (input.held.has('pickup')) this.tryPickup();
     }
 
-    if (input.pressed.has('three_snails')) this.castThreeSnails();
-    if (input.pressed.has('recovery')) this.castBuff('recovery');
-    if (input.pressed.has('nimble_feet')) this.castBuff('nimble_feet');
-    if (input.pressed.has('red_potion')) this.useItemById('red_potion');
-    if (input.pressed.has('blue_potion')) this.useItemById('blue_potion');
+    if (input.pressed.has('shell_toss')) this.castShellToss();
+    if (input.pressed.has('second_wind')) this.castBuff('second_wind');
+    if (input.pressed.has('quickstep')) this.castBuff('quickstep');
+    if (input.pressed.has('berry_tonic')) this.useItemById('berry_tonic');
+    if (input.pressed.has('dew_tonic')) this.useItemById('dew_tonic');
 
     if (!pr.dead) {
       pr.regenTimer += dt;
@@ -367,18 +367,18 @@ export class World {
 
   private updateBuffs(dt: number): void {
     const pr = this.pr;
-    if (pr.recovery) {
-      pr.recovery.remaining -= dt;
-      pr.recovery.tick -= dt;
-      if (pr.recovery.tick <= 0) {
-        pr.recovery.tick += RECOVERY_INTERVAL;
-        this.heal(RECOVERY_HEAL[pr.recovery.level - 1], 0);
+    if (pr.secondWind) {
+      pr.secondWind.remaining -= dt;
+      pr.secondWind.tick -= dt;
+      if (pr.secondWind.tick <= 0) {
+        pr.secondWind.tick += SECOND_WIND_INTERVAL;
+        this.heal(SECOND_WIND_HEAL[pr.secondWind.level - 1], 0);
       }
-      if (pr.recovery.remaining <= 0) pr.recovery = null;
+      if (pr.secondWind.remaining <= 0) pr.secondWind = null;
     }
-    if (pr.nimble) {
-      pr.nimble.remaining -= dt;
-      if (pr.nimble.remaining <= 0) pr.nimble = null;
+    if (pr.quickstep) {
+      pr.quickstep.remaining -= dt;
+      if (pr.quickstep.remaining <= 0) pr.quickstep = null;
     }
   }
 
@@ -411,25 +411,25 @@ export class World {
     this.damageMob(target, rollPlayerDamage(this.rng, d, this.player.level, target.def));
   }
 
-  private castThreeSnails(): void {
-    const level = this.player.skills.three_snails;
+  private castShellToss(): void {
+    const level = this.player.skills.shell_toss;
     if (this.pr.climbing >= 0 || this.pr.attackCooldown > 0) return;
-    if (!this.spendMp('three_snails', level)) return;
+    if (!this.spendMp('shell_toss', level)) return;
     const b = this.pr.body;
     this.pr.attackCooldown = 0.6;
     this.pr.attackTimer = ATTACK_ANIM;
     this.projectiles.push({
       uid: this.uid++, x: b.x + this.pr.facing * 16, y: b.y - 32, dir: this.pr.facing, travelled: 0,
-      damage: THREE_SNAILS_DAMAGE[level - 1],
+      damage: SHELL_TOSS_DAMAGE[level - 1],
     });
-    this.emit({ type: 'skill', skill: 'three_snails' });
+    this.emit({ type: 'skill', skill: 'shell_toss' });
   }
 
-  private castBuff(skill: 'recovery' | 'nimble_feet'): void {
+  private castBuff(skill: 'second_wind' | 'quickstep'): void {
     const level = this.player.skills[skill];
     if (!this.spendMp(skill, level)) return;
-    if (skill === 'recovery') this.pr.recovery = { remaining: RECOVERY_DURATION, tick: RECOVERY_INTERVAL, level };
-    else this.pr.nimble = { remaining: NIMBLE_DURATION[level - 1], level };
+    if (skill === 'second_wind') this.pr.secondWind = { remaining: SECOND_WIND_DURATION, tick: SECOND_WIND_INTERVAL, level };
+    else this.pr.quickstep = { remaining: QUICKSTEP_DURATION[level - 1], level };
     this.emit({ type: 'skill', skill });
   }
 
@@ -498,12 +498,12 @@ export class World {
 
   private spawnDrops(mob: Mob): void {
     const loot: Omit<DropEntity, 'uid' | 'x' | 'y' | 'vy' | 'targetY' | 'settled' | 'age'>[] = [];
-    if (this.rng.chance(0.7)) loot.push({ mesos: this.rng.int(mob.def.meso[0], mob.def.meso[1]) });
+    if (this.rng.chance(0.7)) loot.push({ acorns: this.rng.int(mob.def.acorns[0], mob.def.acorns[1]) });
     for (const d of mob.def.drops) if (this.rng.chance(d.chance)) loot.push({ itemId: d.itemId });
     loot.forEach((l, i) => this.addDrop(mob.x + (i - (loot.length - 1) / 2) * 22, mob.y, l));
   }
 
-  addDrop(x: number, y: number, loot: { itemId?: string; mesos?: number }): void {
+  addDrop(x: number, y: number, loot: { itemId?: string; acorns?: number }): void {
     this.drops.push({ uid: this.uid++, x, y: y - 20, vy: -380, targetY: y, settled: false, age: 0, ...loot });
   }
 
@@ -534,8 +534,8 @@ export class World {
     this.changed();
     if (this.player.hp === 0) {
       pr.dead = true;
-      pr.recovery = null;
-      pr.nimble = null;
+      pr.secondWind = null;
+      pr.quickstep = null;
       this.emit({ type: 'death' });
     }
   }
@@ -604,9 +604,9 @@ export class World {
       .sort((a, c) => Math.abs(a.x - b.x) - Math.abs(c.x - b.x))[0];
     if (!drop) return;
     this.pr.pickupCooldown = 0.15;
-    if (drop.mesos) {
-      this.player.mesos += drop.mesos;
-      this.message(`You have gained mesos (+${drop.mesos})`, 'gain');
+    if (drop.acorns) {
+      this.player.acorns += drop.acorns;
+      this.message(`You have gained acorns (+${drop.acorns})`, 'gain');
     } else if (drop.itemId) {
       if (addItem(this.player.inventory, drop.itemId, 1) === 0) {
         this.message('Your inventory is full.', 'warn');
@@ -659,9 +659,9 @@ export class World {
     const entry = SHOP.find((s) => s.itemId === itemId);
     if (!entry) return 'That item is not for sale.';
     const cost = entry.price * qty;
-    if (this.player.mesos < cost) return 'You do not have enough mesos.';
+    if (this.player.acorns < cost) return 'You do not have enough acorns.';
     if (!canAdd(this.player.inventory, itemId, qty)) return 'Your inventory is full.';
-    this.player.mesos -= cost;
+    this.player.acorns -= cost;
     addItem(this.player.inventory, itemId, qty);
     this.changed();
     return null;
@@ -670,7 +670,7 @@ export class World {
   sell(tab: InvTab, index: number, qty: number): string | null {
     const removed = removeAt(this.player.inventory, tab, index, qty);
     if (!removed) return 'Nothing to sell.';
-    this.player.mesos += getItem(removed.itemId).sell * removed.qty;
+    this.player.acorns += getItem(removed.itemId).sell * removed.qty;
     this.changed();
     return null;
   }
@@ -703,8 +703,8 @@ export class World {
     this.loadMap(TOWN_MAP);
   }
 
-  /** Sail to Victoria Island: the end of the MVP. */
-  travelToVictoria(): string | null {
+  /** Sail for the Mainland: the end of the MVP. */
+  sailToMainland(): string | null {
     if (this.player.level < MAX_LEVEL) return `Come back when you're level ${MAX_LEVEL}.`;
     this.player.finished = true;
     this.changed();

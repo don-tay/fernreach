@@ -16,38 +16,39 @@ export interface MobDef {
   speed: number;
   width: number;
   height: number;
-  meso: [number, number];
+  /** Acorns dropped (min, max). */
+  acorns: [number, number];
   drops: Drop[];
 }
 
 const list: MobDef[] = [
   {
-    id: 'snail', name: 'Snail', level: 1, hp: 8, exp: 3, atk: 3, avoid: 0, speed: 25, width: 36, height: 28,
-    meso: [1, 5], drops: [{ itemId: 'snail_shell', chance: 0.6 }, { itemId: 'red_potion', chance: 0.05 }],
+    id: 'shellbug', name: 'Shellbug', level: 1, hp: 10, exp: 4, atk: 3, avoid: 0, speed: 28, width: 36, height: 28,
+    acorns: [1, 4], drops: [{ itemId: 'mossy_shell', chance: 0.55 }, { itemId: 'berry_tonic', chance: 0.06 }],
   },
   {
-    id: 'blue_snail', name: 'Blue Snail', level: 2, hp: 15, exp: 4, atk: 5, avoid: 1, speed: 30, width: 36, height: 28,
-    meso: [2, 7], drops: [{ itemId: 'blue_snail_shell', chance: 0.6 }, { itemId: 'red_potion', chance: 0.06 }],
+    id: 'dewshell', name: 'Dewshell', level: 2, hp: 18, exp: 5, atk: 5, avoid: 1, speed: 32, width: 36, height: 28,
+    acorns: [2, 6], drops: [{ itemId: 'dewy_shell', chance: 0.55 }, { itemId: 'berry_tonic', chance: 0.07 }],
   },
   {
-    id: 'spore', name: 'Spore', level: 2, hp: 20, exp: 5, atk: 6, avoid: 1, speed: 40, width: 30, height: 30,
-    meso: [3, 9], drops: [{ itemId: 'spore_cap', chance: 0.55 }, { itemId: 'blue_potion', chance: 0.05 }],
+    id: 'puffling', name: 'Puffling', level: 3, hp: 22, exp: 6, atk: 6, avoid: 1, speed: 42, width: 30, height: 30,
+    acorns: [3, 8], drops: [{ itemId: 'puff_spore', chance: 0.5 }, { itemId: 'dew_tonic', chance: 0.06 }],
   },
   {
-    id: 'red_snail', name: 'Red Snail', level: 4, hp: 45, exp: 8, atk: 10, avoid: 2, speed: 35, width: 38, height: 30,
-    meso: [5, 15], drops: [
-      { itemId: 'red_snail_shell', chance: 0.55 },
-      { itemId: 'orange_potion', chance: 0.05 },
-      { itemId: 'blue_bandana', chance: 0.02 },
+    id: 'embershell', name: 'Embershell', level: 5, hp: 52, exp: 10, atk: 11, avoid: 2, speed: 36, width: 38, height: 30,
+    acorns: [6, 14], drops: [
+      { itemId: 'ember_shell', chance: 0.5 },
+      { itemId: 'honey_tonic', chance: 0.06 },
+      { itemId: 'sky_headscarf', chance: 0.025 },
     ],
   },
   {
-    id: 'orange_mushroom', name: 'Orange Mushroom', level: 8, hp: 80, exp: 15, atk: 18, avoid: 4, speed: 50, width: 46, height: 46,
-    meso: [10, 30], drops: [
-      { itemId: 'orange_mushroom_cap', chance: 0.55 },
-      { itemId: 'orange_potion', chance: 0.08 },
-      { itemId: 'red_rubber_boots', chance: 0.02 },
-      { itemId: 'hand_axe', chance: 0.01 },
+    id: 'bouncecap', name: 'Bouncecap', level: 7, hp: 95, exp: 18, atk: 17, avoid: 4, speed: 48, width: 46, height: 46,
+    acorns: [12, 28], drops: [
+      { itemId: 'bouncy_cap', chance: 0.5 },
+      { itemId: 'honey_tonic', chance: 0.09 },
+      { itemId: 'puddle_boots', chance: 0.025 },
+      { itemId: 'woodcutters_hatchet', chance: 0.012 },
     ],
   },
 ];

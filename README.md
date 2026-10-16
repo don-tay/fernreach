@@ -1,8 +1,8 @@
-# Maple Island
+# Fernreach
 
-A single-player, MapleStory-inspired 2D platformer that runs in the browser. This is the MVP: a beginner on a small slice of Maple Island.
+A cozy side-scrolling adventure that runs in the browser, in the spirit of classic 2D MMORPGs. This is the MVP: a novice exploring a small corner of Fernreach.
 
-All art is drawn in code at runtime; no Nexon assets are used.
+All names, numbers and art are original; the art is drawn in code at runtime.
 
 ## Play
 
@@ -18,8 +18,8 @@ pnpm dev        # http://localhost:5199
 | Jump / drop through a platform | Space / ↓ + Space |
 | Attack | C |
 | Pick up | Z |
-| Three Snails / Recovery / Nimble Feet | A / D / F |
-| Red / Blue Potion | 1 / 2 |
+| Shell Toss / Second Wind / Quickstep | A / D / F |
+| Berry / Dew Tonic | 1 / 2 |
 | Items / Stats / Skills / Equipment / Quests | I / S / K / E / Q |
 | Chat (players on your map) | Enter |
 | Players in your channel | P |
@@ -39,9 +39,10 @@ You play online by default. You can see and chat with other players on the same 
 
 ## Content
 
-- **Maps:** Mushroom Town, Snail Hunting Ground I & II, Amherst Outskirts.
-- **Monsters:** Snail, Blue Snail, Spore, Red Snail, Orange Mushroom.
-- **NPCs:** Mai and Yoona (quests), Rain (shop), Shanks (sail to Victoria Island at Lv10 to finish the MVP).
+- **Maps:** Capwood (town), Shellgrass Meadow I & II, Briarwood Trail.
+- **Monsters:** Shellbug, Dewshell, Puffling, Embershell, Bouncecap.
+- **NPCs:** Pella and Hazel (quests), Tobin (shop), Captain Merrow (sail for the Mainland at Lv10 to finish the MVP).
+- **Currency:** acorns.
 
 ## Scripts
 
@@ -66,7 +67,7 @@ src/art      procedural Canvas 2D sprites (swap these to re-skin the game)
 src/game     Phaser scene that renders the World, plus keyboard input
 src/net      multiplayer: message format, transports (Trystero, local tabs) and the session
 src/ui       DOM overlay: HUD, windows, dialogs, shop, chat
-src/debug    dev-only `window.__maple` hook used by Playwright (excluded from production builds)
+src/debug    dev-only `window.__game` hook used by Playwright (excluded from production builds)
 tests        Vitest unit tests
 e2e          Playwright tests
 ```

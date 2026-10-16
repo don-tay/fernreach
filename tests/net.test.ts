@@ -12,31 +12,31 @@ const v = PROTOCOL_VERSION;
 
 describe('protocol', () => {
   it('accepts valid messages and ignores unknown fields', () => {
-    const r = parseMessage({ v, t: 'state', map: 'snail_hunting_1', x: 100, y: 640, facing: -1, pose: 'walk', hp: 50 });
-    expect(r).toEqual({ ok: true, msg: { v, t: 'state', map: 'snail_hunting_1', x: 100, y: 640, facing: -1, pose: 'walk' } });
+    const r = parseMessage({ v, t: 'state', map: 'shellgrass_meadow_1', x: 100, y: 640, facing: -1, pose: 'walk', hp: 50 });
+    expect(r).toEqual({ ok: true, msg: { v, t: 'state', map: 'shellgrass_meadow_1', x: 100, y: 640, facing: -1, pose: 'walk' } });
   });
 
   it('rejects other versions and malformed messages', () => {
-    expect(parseMessage({ v: v + 1, t: 'chat', map: 'mushroom_town', text: 'hi' })).toEqual({ ok: false, reason: 'version' });
-    for (const bad of [null, 'x', [], { v }, { v, t: 'nope' }, { v, t: 'state', map: 'moon', x: 1, y: 1 }, { v, t: 'state', map: 'mushroom_town', x: NaN, y: 1 }, { v, t: 'chat', map: 'mushroom_town', text: '   ' }, { v, t: 'profile', playerId: 'a', name: '', level: 1 }]) {
+    expect(parseMessage({ v: v + 1, t: 'chat', map: 'capwood', text: 'hi' })).toEqual({ ok: false, reason: 'version' });
+    for (const bad of [null, 'x', [], { v }, { v, t: 'nope' }, { v, t: 'state', map: 'moon', x: 1, y: 1 }, { v, t: 'state', map: 'capwood', x: NaN, y: 1 }, { v, t: 'chat', map: 'capwood', text: '   ' }, { v, t: 'profile', playerId: 'a', name: '', level: 1 }]) {
       expect(parseMessage(bad)).toEqual({ ok: false, reason: 'invalid' });
     }
   });
 
   it('sanitises profiles: name length, level range and unknown equipment', () => {
-    const r = parseMessage({ v, t: 'profile', playerId: 'p1', name: 'A\u0000VeryVeryLongName', level: 99, look: { weapon: 'red_potion', hat: 'blue_bandana' } });
-    expect(r.ok && r.msg).toEqual({ v, t: 'profile', playerId: 'p1', name: 'A VeryVeryLo', level: 10, look: { weapon: null, hat: 'blue_bandana' } });
+    const r = parseMessage({ v, t: 'profile', playerId: 'p1', name: 'A\u0000VeryVeryLongName', level: 99, look: { weapon: 'berry_tonic', hat: 'sky_headscarf' } });
+    expect(r.ok && r.msg).toEqual({ v, t: 'profile', playerId: 'p1', name: 'A VeryVeryLo', level: 10, look: { weapon: null, hat: 'sky_headscarf' } });
   });
 
   it('clamps positions into the map and defaults bad poses', () => {
-    const r = parseMessage({ v, t: 'state', map: 'mushroom_town', x: -50, y: 99999, facing: 7, pose: 'moonwalk' });
+    const r = parseMessage({ v, t: 'state', map: 'capwood', x: -50, y: 99999, facing: 7, pose: 'moonwalk' });
     expect(r.ok && r.msg).toMatchObject({ x: 0, y: 720, facing: 1, pose: 'stand' });
   });
 
   it('cleans and truncates chat text', () => {
     expect(cleanText('  hi\n\tthere  ', 80)).toBe('hi there');
     expect(cleanText('x'.repeat(200), 80)).toHaveLength(80);
-    const r = parseMessage({ v, t: 'chat', map: 'mushroom_town', text: '<b>hi</b>' });
+    const r = parseMessage({ v, t: 'chat', map: 'capwood', text: '<b>hi</b>' });
     expect(r.ok && r.msg.t === 'chat' && r.msg.text).toBe('<b>hi</b>'); // shown as plain text by the UI
   });
 
@@ -56,8 +56,11 @@ describe('settings and identity', () => {
     expect(loadSettings(storage)).toEqual({ online: true, channel: 1, privateCode: null });
     saveSettings(storage, { online: false, channel: 3, privateCode: 'abc' });
     expect(loadSettings(storage)).toEqual({ online: false, channel: 3, privateCode: 'abc' });
-    data.set('maple-net-settings-v1', '{"channel": 9, "online": "yes"}');
+    data.set('fernreach-net-settings-v1', '{"channel": 9, "online": "yes"}');
     expect(loadSettings(storage)).toEqual({ online: true, channel: 1, privateCode: null });
+    data.clear();
+    data.set('maple-net-settings-v1', '{"channel": 2, "online": false}');
+    expect(loadSettings(storage)).toEqual({ online: false, channel: 2, privateCode: null });
   });
 
   it('gives every character a permanent ID, including old saves', () => {
@@ -103,7 +106,7 @@ function setup(settings: Partial<NetSettings> = {}, configure: (t: FakeTransport
   let now = 0;
   const transports: FakeTransport[] = [];
   const me: LocalPlayer = {
-    playerId: 'me', name: 'Me', level: 3, look: { weapon: 'sword', hat: null }, map: 'mushroom_town', x: 100, y: 640, facing: 1, pose: 'stand',
+    playerId: 'me', name: 'Me', level: 3, look: { weapon: 'iron_shortsword', hat: null }, map: 'capwood', x: 100, y: 640, facing: 1, pose: 'stand',
   };
   const saved: NetSettings[] = [];
   const net = new NetSession(
@@ -128,7 +131,7 @@ function setup(settings: Partial<NetSettings> = {}, configure: (t: FakeTransport
   };
   const tr = () => transports[transports.length - 1];
   const from = (peer: string, msg: Record<string, unknown>) => tr().onMessage(peer, { v, ...msg });
-  const peer = (id: string, name: string, map = 'mushroom_town', x = 200) => {
+  const peer = (id: string, name: string, map = 'capwood', x = 200) => {
     from(id, { t: 'profile', playerId: `pid-${id}`, name, level: 2, look: {} });
     from(id, { t: 'state', map, x, y: 640, facing: 1, pose: 'stand' });
   };
@@ -234,13 +237,13 @@ describe('net session: players', () => {
     const { net, me, events, peer, from, tr } = setup();
     net.start();
     peer('a', 'Alice');
-    peer('b', 'Bob', 'snail_hunting_1');
+    peer('b', 'Bob', 'shellgrass_meadow_1');
     expect(net.players().map((r) => r.profile!.name)).toEqual(['Alice', 'Bob']);
     expect(net.visible(me.map).map((r) => r.profile!.name)).toEqual(['Alice']);
     expect(notices(events)).toEqual(['Alice joined the map.']);
-    from('a', { t: 'state', map: 'snail_hunting_1', x: 60, y: 640, facing: 1, pose: 'stand' });
+    from('a', { t: 'state', map: 'shellgrass_meadow_1', x: 60, y: 640, facing: 1, pose: 'stand' });
     expect(notices(events)).toContain('Alice left the map.');
-    from('b', { t: 'state', map: 'mushroom_town', x: 60, y: 640, facing: 1, pose: 'stand' });
+    from('b', { t: 'state', map: 'capwood', x: 60, y: 640, facing: 1, pose: 'stand' });
     expect(notices(events)).toContain('Bob joined the map.');
     tr().onPeerLeave('b');
     expect(notices(events)).toContain('Bob left the map.');
@@ -258,11 +261,11 @@ describe('net session: players', () => {
   it('interpolates remote movement about 100ms behind', () => {
     const { net, advance, from, peer } = setup();
     net.start();
-    peer('a', 'Alice', 'mushroom_town', 0);
+    peer('a', 'Alice', 'capwood', 0);
     advance(100);
-    from('a', { t: 'state', map: 'mushroom_town', x: 100, y: 640, facing: 1, pose: 'walk' });
+    from('a', { t: 'state', map: 'capwood', x: 100, y: 640, facing: 1, pose: 'walk' });
     advance(50);
-    const r = net.visible('mushroom_town')[0];
+    const r = net.visible('capwood')[0];
     expect(net.position(r)!.x).toBeCloseTo(50, 0);
     expect(r.pose).toBe('walk');
   });
@@ -283,7 +286,7 @@ describe('net session: chat', () => {
     net.start();
     advance(50);
     expect(net.sendChat('  hello  ')).toBeNull();
-    expect(tr().sent.at(-1)?.data).toEqual({ v, t: 'chat', map: 'mushroom_town', text: 'hello' });
+    expect(tr().sent.at(-1)?.data).toEqual({ v, t: 'chat', map: 'capwood', text: 'hello' });
     expect(net.bubbleText(net.selfBubble)).toBe('hello');
     expect(events.at(-1)).toEqual({ type: 'chat', name: 'Me', text: 'hello', self: true, offline: false });
     expect(net.sendChat('again')).toMatch(/too fast/);
@@ -304,15 +307,15 @@ describe('net session: chat', () => {
     const { net, advance, events, peer, from } = setup();
     net.start();
     peer('a', 'Alice');
-    peer('b', 'Bob', 'snail_hunting_1');
-    from('a', { t: 'chat', map: 'mushroom_town', text: 'hi!' });
-    from('a', { t: 'chat', map: 'mushroom_town', text: 'spam' });
-    from('b', { t: 'chat', map: 'snail_hunting_1', text: 'far away' });
+    peer('b', 'Bob', 'shellgrass_meadow_1');
+    from('a', { t: 'chat', map: 'capwood', text: 'hi!' });
+    from('a', { t: 'chat', map: 'capwood', text: 'spam' });
+    from('b', { t: 'chat', map: 'shellgrass_meadow_1', text: 'far away' });
     const chats = events.filter((e) => e.type === 'chat');
     expect(chats).toEqual([{ type: 'chat', name: 'Alice', text: 'hi!', self: false, offline: false }]);
-    expect(net.bubbleText(net.visible('mushroom_town')[0].bubble)).toBe('hi!');
+    expect(net.bubbleText(net.visible('capwood')[0].bubble)).toBe('hi!');
     advance(1000);
-    from('a', { t: 'chat', map: 'mushroom_town', text: 'later' });
+    from('a', { t: 'chat', map: 'capwood', text: 'later' });
     expect(events.filter((e) => e.type === 'chat')).toHaveLength(2);
   });
 });

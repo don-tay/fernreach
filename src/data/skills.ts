@@ -1,4 +1,4 @@
-export type SkillId = 'three_snails' | 'recovery' | 'nimble_feet';
+export type SkillId = 'shell_toss' | 'second_wind' | 'quickstep';
 
 export interface SkillDef {
   id: SkillId;
@@ -11,25 +11,25 @@ export interface SkillDef {
 }
 
 export const SKILLS: Record<SkillId, SkillDef> = {
-  three_snails: {
-    id: 'three_snails', name: 'Three Snails', key: 'A', maxLevel: 3, mpCost: [3, 5, 7],
-    description: 'Throws a snail shell at a monster in front of you.',
+  shell_toss: {
+    id: 'shell_toss', name: 'Shell Toss', key: 'A', maxLevel: 3, mpCost: [4, 6, 8],
+    description: 'Hurls a spinning shell at the first monster ahead.',
   },
-  recovery: {
-    id: 'recovery', name: 'Recovery', key: 'D', maxLevel: 3, mpCost: [10, 10, 10],
-    description: 'Recovers HP every 3 seconds for 30 seconds.',
+  second_wind: {
+    id: 'second_wind', name: 'Second Wind', key: 'D', maxLevel: 3, mpCost: [8, 10, 12],
+    description: 'Restores HP every 4 seconds for 32 seconds.',
   },
-  nimble_feet: {
-    id: 'nimble_feet', name: 'Nimble Feet', key: 'F', maxLevel: 3, mpCost: [4, 7, 10],
-    description: 'Temporarily increases movement speed.',
+  quickstep: {
+    id: 'quickstep', name: 'Quickstep', key: 'F', maxLevel: 3, mpCost: [5, 7, 9],
+    description: 'Briefly boosts your movement speed.',
   },
 };
 
 export const SKILL_IDS = Object.keys(SKILLS) as SkillId[];
 
-export const THREE_SNAILS_DAMAGE = [10, 25, 40];
-export const RECOVERY_HEAL = [10, 20, 30];
-export const RECOVERY_DURATION = 30;
-export const RECOVERY_INTERVAL = 3;
-export const NIMBLE_SPEED = [10, 15, 20];
-export const NIMBLE_DURATION = [4, 8, 12];
+export const SHELL_TOSS_DAMAGE = [12, 24, 36];
+export const SECOND_WIND_HEAL = [10, 18, 26];
+export const SECOND_WIND_DURATION = 32;
+export const SECOND_WIND_INTERVAL = 4;
+export const QUICKSTEP_SPEED = [12, 18, 24];
+export const QUICKSTEP_DURATION = [6, 10, 14];

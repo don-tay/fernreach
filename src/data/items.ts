@@ -32,27 +32,27 @@ export interface EtcItem extends BaseItem {
 export type Item = UseItem | EquipItem | EtcItem;
 
 const list: Item[] = [
-  { id: 'red_potion', name: 'Red Potion', tab: 'use', hp: 50, sell: 12, color: '#e0393e' },
-  { id: 'orange_potion', name: 'Orange Potion', tab: 'use', hp: 150, sell: 25, color: '#f28c28' },
-  { id: 'blue_potion', name: 'Blue Potion', tab: 'use', mp: 100, sell: 40, color: '#3a74e0' },
+  { id: 'berry_tonic', name: 'Berry Tonic', tab: 'use', hp: 60, sell: 15, color: '#d8345a' },
+  { id: 'honey_tonic', name: 'Honey Tonic', tab: 'use', hp: 175, sell: 30, color: '#e8a820' },
+  { id: 'dew_tonic', name: 'Dew Tonic', tab: 'use', mp: 90, sell: 42, color: '#3aa0e0' },
 
-  { id: 'training_sword', name: 'Training Sword', tab: 'equip', slot: 'weapon', reqLevel: 0, watk: 8, attackDelay: 0.6, sell: 1, color: '#b0b8c0' },
-  { id: 'sword', name: 'Sword', tab: 'equip', slot: 'weapon', reqLevel: 1, watk: 15, attackDelay: 0.6, sell: 150, color: '#d8dee6' },
-  { id: 'wooden_club', name: 'Wooden Club', tab: 'equip', slot: 'weapon', reqLevel: 5, watk: 18, attackDelay: 0.7, sell: 350, color: '#9a6a3a' },
-  { id: 'hand_axe', name: 'Hand Axe', tab: 'equip', slot: 'weapon', reqLevel: 8, watk: 21, attackDelay: 0.75, sell: 550, color: '#8f9aa6' },
+  { id: 'practice_blade', name: 'Practice Blade', tab: 'equip', slot: 'weapon', reqLevel: 0, watk: 7, attackDelay: 0.6, sell: 1, color: '#b0b8c0' },
+  { id: 'iron_shortsword', name: 'Iron Shortsword', tab: 'equip', slot: 'weapon', reqLevel: 1, watk: 14, attackDelay: 0.6, sell: 160, color: '#d8dee6' },
+  { id: 'oak_cudgel', name: 'Oak Cudgel', tab: 'equip', slot: 'weapon', reqLevel: 5, watk: 18, attackDelay: 0.7, sell: 340, color: '#9a6a3a' },
+  { id: 'woodcutters_hatchet', name: "Woodcutter's Hatchet", tab: 'equip', slot: 'weapon', reqLevel: 7, watk: 22, attackDelay: 0.75, sell: 560, color: '#8f9aa6' },
 
-  { id: 'blue_bandana', name: 'Blue Bandana', tab: 'equip', slot: 'hat', reqLevel: 1, wdef: 3, sell: 60, color: '#3f7fd8' },
-  { id: 'brown_cap', name: 'Brown Leather Cap', tab: 'equip', slot: 'hat', reqLevel: 7, wdef: 6, sell: 150, color: '#8a5a2b' },
-  { id: 'white_undershirt', name: 'White Undershirt', tab: 'equip', slot: 'top', reqLevel: 0, wdef: 3, sell: 1, color: '#f4f4f4' },
-  { id: 'orange_tshirt', name: 'Orange Sporty T', tab: 'equip', slot: 'top', reqLevel: 5, wdef: 6, sell: 150, color: '#f39a2e' },
-  { id: 'leather_sandals', name: 'Leather Sandals', tab: 'equip', slot: 'shoes', reqLevel: 0, wdef: 2, sell: 1, color: '#a87a4a' },
-  { id: 'red_rubber_boots', name: 'Red Rubber Boots', tab: 'equip', slot: 'shoes', reqLevel: 5, wdef: 4, sell: 120, color: '#d63c3c' },
+  { id: 'sky_headscarf', name: 'Sky Headscarf', tab: 'equip', slot: 'hat', reqLevel: 1, wdef: 3, sell: 65, color: '#4a9ae0' },
+  { id: 'ranger_cap', name: 'Ranger Cap', tab: 'equip', slot: 'hat', reqLevel: 6, wdef: 6, sell: 160, color: '#5a7a3a' },
+  { id: 'linen_tunic', name: 'Linen Tunic', tab: 'equip', slot: 'top', reqLevel: 0, wdef: 2, sell: 1, color: '#efe6d2' },
+  { id: 'tangerine_jersey', name: 'Tangerine Jersey', tab: 'equip', slot: 'top', reqLevel: 5, wdef: 6, sell: 160, color: '#f39a2e' },
+  { id: 'rope_sandals', name: 'Rope Sandals', tab: 'equip', slot: 'shoes', reqLevel: 0, wdef: 2, sell: 1, color: '#c8a46a' },
+  { id: 'puddle_boots', name: 'Puddle Boots', tab: 'equip', slot: 'shoes', reqLevel: 5, wdef: 4, sell: 130, color: '#e6c22a' },
 
-  { id: 'snail_shell', name: 'Snail Shell', tab: 'etc', sell: 1, color: '#c08a4a' },
-  { id: 'blue_snail_shell', name: 'Blue Snail Shell', tab: 'etc', sell: 2, color: '#4a8ad8' },
-  { id: 'red_snail_shell', name: 'Red Snail Shell', tab: 'etc', sell: 3, color: '#d8443a' },
-  { id: 'spore_cap', name: 'Spore Cap', tab: 'etc', sell: 3, color: '#b0743e' },
-  { id: 'orange_mushroom_cap', name: 'Orange Mushroom Cap', tab: 'etc', sell: 6, color: '#f08a24' },
+  { id: 'mossy_shell', name: 'Mossy Shell', tab: 'etc', sell: 1, color: '#6aa84f' },
+  { id: 'dewy_shell', name: 'Dewy Shell', tab: 'etc', sell: 2, color: '#4a8ad8' },
+  { id: 'ember_shell', name: 'Ember Shell', tab: 'etc', sell: 4, color: '#d8443a' },
+  { id: 'puff_spore', name: 'Puff Spore', tab: 'etc', sell: 3, color: '#a07ad0' },
+  { id: 'bouncy_cap', name: 'Bouncy Cap', tab: 'etc', sell: 7, color: '#2fb5a8' },
 ];
 
 export const ITEMS: Record<string, Item> = Object.fromEntries(list.map((i) => [i.id, i]));
@@ -63,16 +63,16 @@ export function getItem(id: string): Item {
   return item;
 }
 
-/** Items sold by the Mushroom Town shop, with buy prices. */
+/** Items sold by Tobin's shop in Capwood, with buy prices. */
 export const SHOP: { itemId: string; price: number }[] = [
-  { itemId: 'red_potion', price: 25 },
-  { itemId: 'orange_potion', price: 50 },
-  { itemId: 'blue_potion', price: 80 },
-  { itemId: 'sword', price: 300 },
-  { itemId: 'wooden_club', price: 700 },
-  { itemId: 'hand_axe', price: 1100 },
-  { itemId: 'blue_bandana', price: 120 },
-  { itemId: 'brown_cap', price: 300 },
-  { itemId: 'orange_tshirt', price: 300 },
-  { itemId: 'red_rubber_boots', price: 250 },
+  { itemId: 'berry_tonic', price: 30 },
+  { itemId: 'honey_tonic', price: 60 },
+  { itemId: 'dew_tonic', price: 85 },
+  { itemId: 'iron_shortsword', price: 320 },
+  { itemId: 'oak_cudgel', price: 680 },
+  { itemId: 'woodcutters_hatchet', price: 1150 },
+  { itemId: 'sky_headscarf', price: 130 },
+  { itemId: 'ranger_cap', price: 320 },
+  { itemId: 'tangerine_jersey', price: 320 },
+  { itemId: 'puddle_boots', price: 260 },
 ];

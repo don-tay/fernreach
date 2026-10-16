@@ -5,8 +5,6 @@ import type { Rng } from './rng';
 
 /** Bare-handed attack power. */
 const UNARMED_WATK = 3;
-/** Base mastery for a beginner with a one-handed weapon. */
-const MASTERY = 0.1;
 
 export interface Derived {
   watk: number;
@@ -23,14 +21,14 @@ export function derive(p: PlayerState): Derived {
   const weapon = items.find((i) => i.slot === 'weapon');
   const watk = weapon?.watk ?? UNARMED_WATK;
   const wdef = items.reduce((n, i) => n + (i.wdef ?? 0), 0);
-  // Pre-Big Bang one-handed swing formula.
-  const maxDamage = Math.max(1, Math.floor(((p.str * 4 + p.dex) * watk) / 100));
-  const minDamage = Math.max(1, Math.min(maxDamage, Math.floor(((p.str * 4 * 0.9 * MASTERY + p.dex) * watk) / 100)));
+  // STR drives the top of the damage range, DEX lifts the bottom.
+  const maxDamage = Math.max(1, Math.floor(((p.str * 4 + p.dex * 2) * watk) / 90));
+  const minDamage = Math.max(1, Math.min(maxDamage, Math.floor(((p.str * 0.5 + p.dex * 2) * watk) / 90)));
   return {
     watk,
     wdef,
-    acc: p.dex * 0.8 + p.luk * 0.5,
-    avoid: p.dex * 0.25 + p.luk * 0.5,
+    acc: p.dex + p.luk * 0.4,
+    avoid: p.dex * 0.3 + p.luk * 0.4,
     minDamage,
     maxDamage,
     attackDelay: weapon?.attackDelay ?? 0.5,

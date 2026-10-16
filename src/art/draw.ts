@@ -116,12 +116,12 @@ export function drawCharacter(look: CharLook, frame: CharFrame): HTMLCanvasEleme
 export function drawWeapon(itemId: string): HTMLCanvasElement {
   const [c, g] = canvas(16, 44);
   const item = getItem(itemId);
-  if (itemId === 'wooden_club') {
+  if (itemId === 'oak_cudgel') {
     roundRect(g, 5, 6, 7, 32, 4);
     fillStroke(g, item.color);
     roundRect(g, 6, 34, 4, 10, 2);
     fillStroke(g, '#6a4520');
-  } else if (itemId === 'hand_axe') {
+  } else if (itemId === 'woodcutters_hatchet') {
     roundRect(g, 7, 4, 3, 40, 1);
     fillStroke(g, '#7a5530');
     g.beginPath();
@@ -156,7 +156,7 @@ export function drawHatOverlay(itemId: string): HTMLCanvasElement {
   g.lineTo(40, 18);
   g.lineTo(8, 18);
   fillStroke(g, color);
-  if (itemId === 'brown_cap') {
+  if (itemId === 'ranger_cap') {
     roundRect(g, 24, 15, 20, 4, 2);
     fillStroke(g, shade(color, -0.1));
   } else {
@@ -172,14 +172,14 @@ export function drawHatOverlay(itemId: string): HTMLCanvasElement {
 // ---------------------------------------------------------------- monsters
 
 export function drawMob(mobId: string, frame: 0 | 1): HTMLCanvasElement {
-  if (mobId === 'spore') return drawMushroom(36, 36, '#c87a3a', false, frame);
-  if (mobId === 'orange_mushroom') return drawMushroom(56, 56, '#f28a24', true, frame);
-  const shell = { snail: '#c08a4a', blue_snail: '#4a8ad8', red_snail: '#d8443a' }[mobId] ?? '#c08a4a';
-  return drawSnail(shell, frame);
+  if (mobId === 'puffling') return drawCapCritter(36, 36, '#a07ad0', false, frame);
+  if (mobId === 'bouncecap') return drawCapCritter(56, 56, '#2fb5a8', true, frame);
+  const shell = { shellbug: '#6aa84f', dewshell: '#4a8ad8', embershell: '#d8443a' }[mobId] ?? '#6aa84f';
+  return drawShellCritter(shell, frame);
 }
 
-/** Snail facing left; feet at the bottom centre. */
-function drawSnail(shell: string, frame: 0 | 1): HTMLCanvasElement {
+/** Shelled critter facing left; feet at the bottom centre. */
+function drawShellCritter(shell: string, frame: 0 | 1): HTMLCanvasElement {
   const [c, g] = canvas(44, 34);
   const stretch = frame === 1 ? 2 : 0;
   // Body
@@ -221,8 +221,8 @@ function drawSnail(shell: string, frame: 0 | 1): HTMLCanvasElement {
   return c;
 }
 
-/** Mushroom facing left; feet at the bottom centre. */
-function drawMushroom(w: number, h: number, cap: string, spots: boolean, frame: 0 | 1): HTMLCanvasElement {
+/** Cap-headed critter facing left; feet at the bottom centre. */
+function drawCapCritter(w: number, h: number, cap: string, spots: boolean, frame: 0 | 1): HTMLCanvasElement {
   const [c, g] = canvas(w, h);
   const squash = frame === 1 ? 2 : 0;
   const cx = w / 2;
@@ -290,9 +290,9 @@ export function drawItemIcon(itemId: string): HTMLCanvasElement {
   } else if (item.tab === 'equip') {
     drawEquipIcon(g, item);
   } else if (itemId.includes('shell')) {
-    g.drawImage(drawSnail(item.color, 0), 14, 3, 20, 20, 3, 3, 26, 26);
+    g.drawImage(drawShellCritter(item.color, 0), 14, 3, 20, 20, 3, 3, 26, 26);
   } else {
-    g.drawImage(drawMushroom(36, 36, item.color, itemId === 'orange_mushroom_cap', 0), 0, 4, 36, 18, 1, 6, 30, 15);
+    g.drawImage(drawCapCritter(36, 36, item.color, itemId === 'bouncy_cap', 0), 0, 4, 36, 18, 1, 6, 30, 15);
   }
   return c;
 }
@@ -334,15 +334,22 @@ function drawEquipIcon(g: CanvasRenderingContext2D, item: EquipItem) {
   }
 }
 
-export function drawMeso(): HTMLCanvasElement {
+export function drawAcorn(): HTMLCanvasElement {
   const [c, g] = canvas(18, 18);
+  // Nut
   g.beginPath();
-  g.arc(9, 9, 7.5, 0, Math.PI * 2);
-  fillStroke(g, '#f5c542', '#9a6a10');
-  g.fillStyle = '#9a6a10';
-  g.font = 'bold 9px sans-serif';
-  g.textAlign = 'center';
-  g.fillText('M', 9, 12.5);
+  g.ellipse(9, 11, 5.5, 6, 0, 0, Math.PI * 2);
+  fillStroke(g, '#c8823a', '#6a3a10');
+  g.fillStyle = 'rgba(255,255,255,0.35)';
+  g.beginPath();
+  g.ellipse(7, 11, 1.5, 3, 0, 0, Math.PI * 2);
+  g.fill();
+  // Cap and stem
+  g.beginPath();
+  g.ellipse(9, 6.5, 7, 3.5, 0, 0, Math.PI * 2);
+  fillStroke(g, '#7a5228', '#4a2a10');
+  g.fillStyle = '#4a2a10';
+  g.fillRect(8.2, 1, 1.6, 3);
   return c;
 }
 
@@ -414,7 +421,7 @@ export function drawMapLayer(map: MapDef): HTMLCanvasElement {
   const [c, g] = canvas(map.width, map.height);
   const [ground, ...floating] = map.platforms;
   if (map.theme === 'town') {
-    for (const x of [140, 600, 1260, 1620]) drawMushroomHouse(g, x, ground.y);
+    for (const x of [140, 600, 1260, 1620]) drawCapHouse(g, x, ground.y);
   } else {
     for (let x = 160; x < map.width; x += 330) drawTree(g, x + ((x * 7) % 90), ground.y, map.theme === 'forest');
   }
@@ -462,7 +469,7 @@ function drawRope(g: CanvasRenderingContext2D, x: number, top: number, bottom: n
   for (let y = top + 10; y < bottom; y += 14) g.fillRect(x - 3, y, 6, 3);
 }
 
-function drawMushroomHouse(g: CanvasRenderingContext2D, x: number, groundY: number) {
+function drawCapHouse(g: CanvasRenderingContext2D, x: number, groundY: number) {
   roundRect(g, x - 40, groundY - 80, 80, 80, 10);
   fillStroke(g, '#f6e8c8', '#7a5a3a', 2);
   roundRect(g, x - 12, groundY - 42, 24, 42, 10);

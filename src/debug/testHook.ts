@@ -16,7 +16,7 @@ export function installTestHook(world: World, save: () => void, net: NetSession)
       const b = world.pr.body;
       return {
         mapId: p.mapId, x: b.x, y: b.y, onGround: b.onGround, climbing: world.pr.climbing, level: p.level, exp: p.exp,
-        hp: p.hp, mp: p.mp, ap: p.ap, sp: p.sp, str: p.str, mesos: p.mesos, dead: world.pr.dead, blocked: world.blocked,
+        hp: p.hp, mp: p.mp, ap: p.ap, sp: p.sp, str: p.str, acorns: p.acorns, dead: world.pr.dead, blocked: world.blocked,
         inventory: structuredClone(p.inventory), equipment: { ...p.equipment }, quests: structuredClone(p.quests),
         drops: world.drops.length,
         mobs: world.mobs.map((m) => ({ id: m.def.id, x: m.x, y: m.y, hp: m.hp, state: m.state })),
@@ -34,8 +34,8 @@ export function installTestHook(world: World, save: () => void, net: NetSession)
     },
     warp: (mapId: string) => world.loadMap(getMap(mapId).id),
     addExp: (n: number) => world.grantExpForTest(n),
-    giveMesos: (n: number) => {
-      world.player.mesos += n;
+    giveAcorns: (n: number) => {
+      world.player.acorns += n;
       world.version++;
     },
     giveItem: (itemId: string, qty = 1) => {
@@ -46,7 +46,7 @@ export function installTestHook(world: World, save: () => void, net: NetSession)
       world.player.hp = hp;
       world.version++;
     },
-    spawnDrop: (loot: { itemId?: string; mesos?: number }) => world.addDrop(world.pr.body.x, world.pr.body.y, loot),
+    spawnDrop: (loot: { itemId?: string; acorns?: number }) => world.addDrop(world.pr.body.x, world.pr.body.y, loot),
     /** Teleports next to the nearest live monster of a kind, facing it, and makes the player briefly invulnerable. */
     approachMob: (mobId: string) => {
       const mob = world.mobs.find((m) => m.def.id === mobId && m.state === 'alive');
@@ -67,5 +67,5 @@ export function installTestHook(world: World, save: () => void, net: NetSession)
       })),
     }),
   };
-  (window as unknown as { __maple: typeof hook }).__maple = hook;
+  (window as unknown as { __game: typeof hook }).__game = hook;
 }

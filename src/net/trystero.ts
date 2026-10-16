@@ -2,7 +2,7 @@ import type { Room } from 'trystero';
 import type { Transport } from './transport';
 
 /** Unique to this game, and separate for local development and the deployed site so test runs never mix with real players. */
-const APP_ID = `don-tay.maple-browser.${import.meta.env.PROD ? 'live' : 'dev'}`;
+const APP_ID = `don-tay.fernreach.${import.meta.env.PROD ? 'live' : 'dev'}`;
 
 type TrysteroModule = typeof import('trystero');
 

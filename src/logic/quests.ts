@@ -37,7 +37,7 @@ export function completeQuest(p: PlayerState, id: QuestId, rng: Rng): string | n
   if (!rewardItems.every((r) => canAdd(p.inventory, r.itemId, r.qty))) return 'Please make room in your inventory first.';
   if (q.goal.type === 'collect') removeItem(p.inventory, q.goal.itemId, q.goal.count);
   for (const r of rewardItems) addItem(p.inventory, r.itemId, r.qty);
-  p.mesos += q.reward.mesos ?? 0;
+  p.acorns += q.reward.acorns ?? 0;
   gainExp(p, q.reward.exp, rng);
   p.quests[id] = { state: 'done', kills: p.quests[id]!.kills };
   return null;

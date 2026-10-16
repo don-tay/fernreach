@@ -8,10 +8,10 @@ import { countItem } from '../src/logic/inventory';
 
 const DT = 1 / 60;
 
-function setup(mapId = 'mushroom_town') {
+function setup(mapId = 'capwood') {
   const p = createPlayer('Test');
   p.mapId = mapId;
-  p.x = mapId === 'mushroom_town' ? 120 : 100;
+  p.x = mapId === 'capwood' ? 120 : 100;
   const world = new World(p, createRng(7));
   const events: WorldEvent[] = [];
   world.on((e) => events.push(e));
@@ -64,9 +64,9 @@ describe('world: movement', () => {
   });
 
   it('climbs down a rope and lands on the ground below', () => {
-    const { world, run } = setup('snail_hunting_1');
+    const { world, run } = setup('shellgrass_meadow_1');
     const b = world.pr.body;
-    world.loadMap('snail_hunting_1', undefined, { x: 400, y: 560 }); // top of the leftmost rope
+    world.loadMap('shellgrass_meadow_1', undefined, { x: 400, y: 560 }); // top of the leftmost rope
     world.mobs = [];
     run(0.1, 'down');
     expect(world.pr.climbing).toBeGreaterThanOrEqual(0);
@@ -95,7 +95,7 @@ describe('world: movement', () => {
   });
 
   it('returns a player who falls out of the map to the spawn point', () => {
-    const { world, run } = setup('snail_hunting_1');
+    const { world, run } = setup('shellgrass_meadow_1');
     world.mobs = [];
     Object.assign(world.pr.body, { x: 900, y: 5000, onGround: false, platform: -1 });
     run(0.1);
@@ -114,41 +114,41 @@ describe('world: movement', () => {
     const { world, events, run } = setup();
     world.pr.body.x = 1740;
     run(0.05, 'up');
-    expect(world.player.mapId).toBe('snail_hunting_1');
+    expect(world.player.mapId).toBe('shellgrass_meadow_1');
     expect(world.pr.body.x).toBe(60);
     expect(events.some((e) => e.type === 'mapChanged')).toBe(true);
   });
 });
 
 describe('world: combat and loot', () => {
-  it('kills a snail for EXP and loot', () => {
-    const { world, events, run } = setup('snail_hunting_1');
-    const snail = world.mobs.find((m) => m.def.id === 'snail' && m.spawn.platform === 0)!;
-    for (let i = 0; i < 40 && snail.state === 'alive'; i++) {
-      world.pr.body.x = snail.x - 30;
+  it('kills a shellbug for EXP and loot', () => {
+    const { world, events, run } = setup('shellgrass_meadow_1');
+    const bug = world.mobs.find((m) => m.def.id === 'shellbug' && m.spawn.platform === 0)!;
+    for (let i = 0; i < 40 && bug.state === 'alive'; i++) {
+      world.pr.body.x = bug.x - 30;
       world.pr.facing = 1;
       world.pr.invuln = 10;
       run(0.1, 'attack');
     }
-    expect(snail.state).not.toBe('alive');
-    expect(world.player.exp).toBe(3);
+    expect(bug.state).not.toBe('alive');
+    expect(world.player.exp).toBe(4);
     expect(events.some((e) => e.type === 'message' && e.text.includes('experience'))).toBe(true);
   });
 
   it('picks up drops', () => {
-    const { world, run } = setup('snail_hunting_1');
+    const { world, run } = setup('shellgrass_meadow_1');
     world.mobs = [];
-    world.addDrop(world.pr.body.x, GROUND_Y, { itemId: 'snail_shell' });
-    world.addDrop(world.pr.body.x + 10, GROUND_Y, { mesos: 7 });
+    world.addDrop(world.pr.body.x, GROUND_Y, { itemId: 'mossy_shell' });
+    world.addDrop(world.pr.body.x + 10, GROUND_Y, { acorns: 7 });
     run(1);
     run(0.5, 'pickup');
-    expect(countItem(world.player.inventory, 'snail_shell')).toBe(1);
-    expect(world.player.mesos).toBe(7);
+    expect(countItem(world.player.inventory, 'mossy_shell')).toBe(1);
+    expect(world.player.acorns).toBe(7);
     expect(world.drops).toHaveLength(0);
   });
 
   it('takes touch damage with knockback, dies and respawns in town', () => {
-    const { world, events, run } = setup('snail_hunting_1');
+    const { world, events, run } = setup('shellgrass_meadow_1');
     const mob = world.mobs[0];
     world.player.hp = 1;
     for (let i = 0; i < 300 && !world.pr.dead; i++) {
@@ -159,7 +159,7 @@ describe('world: combat and loot', () => {
     expect(world.pr.dead).toBe(true);
     expect(events.some((e) => e.type === 'death')).toBe(true);
     world.respawn();
-    expect(world.player.mapId).toBe('mushroom_town');
+    expect(world.player.mapId).toBe('capwood');
     expect(world.player.hp).toBe(50);
   });
 });
@@ -167,50 +167,50 @@ describe('world: combat and loot', () => {
 describe('world: skills, items and shop', () => {
   it('requires learning skills and spending MP', () => {
     const { world, run } = setup();
-    run(0.05, 'recovery');
-    expect(world.pr.recovery).toBeNull();
-    world.player.skills.recovery = 1;
+    run(0.05, 'second_wind');
+    expect(world.pr.secondWind).toBeNull();
+    world.player.skills.second_wind = 1;
     world.player.mp = 20;
-    run(0.05, 'recovery');
-    expect(world.pr.recovery).not.toBeNull();
-    expect(world.player.mp).toBe(10);
+    run(0.05, 'second_wind');
+    expect(world.pr.secondWind).not.toBeNull();
+    expect(world.player.mp).toBe(12);
     world.player.hp = 10;
-    run(3.1);
+    run(4.1);
     expect(world.player.hp).toBeGreaterThanOrEqual(20);
   });
 
-  it('nimble feet increases speed', () => {
+  it('quickstep increases speed', () => {
     const { world, run } = setup();
     const base = world.speed;
-    world.player.skills.nimble_feet = 1;
-    run(0.05, 'nimble_feet');
+    world.player.skills.quickstep = 1;
+    run(0.05, 'quickstep');
     expect(world.speed).toBeGreaterThan(base);
   });
 
-  it('uses potions from hotkeys', () => {
+  it('uses tonics from hotkeys', () => {
     const { world, run } = setup();
     world.player.hp = 1;
-    run(0.05, 'red_potion');
-    expect(world.player.hp).toBe(50);
-    expect(countItem(world.player.inventory, 'red_potion')).toBe(4);
+    run(0.05, 'berry_tonic');
+    expect(world.player.hp).toBe(55);
+    expect(countItem(world.player.inventory, 'berry_tonic')).toBe(4);
   });
 
   it('buys and sells', () => {
     const { world } = setup();
-    expect(world.buy('red_potion', 1)).toMatch(/mesos/);
-    world.player.mesos = 100;
-    expect(world.buy('red_potion', 2)).toBeNull();
-    expect(world.player.mesos).toBe(50);
-    expect(countItem(world.player.inventory, 'red_potion')).toBe(7);
+    expect(world.buy('berry_tonic', 1)).toMatch(/acorns/);
+    world.player.acorns = 100;
+    expect(world.buy('berry_tonic', 2)).toBeNull();
+    expect(world.player.acorns).toBe(40);
+    expect(countItem(world.player.inventory, 'berry_tonic')).toBe(7);
     expect(world.sell('use', 0, 7)).toBeNull();
-    expect(world.player.mesos).toBe(50 + 12 * 7);
+    expect(world.player.acorns).toBe(40 + 15 * 7);
   });
 
-  it('only sails to Victoria at the level cap', () => {
+  it('only sails for the Mainland at the level cap', () => {
     const { world, events } = setup();
-    expect(world.travelToVictoria()).toMatch(/level 10/);
+    expect(world.sailToMainland()).toMatch(/level 10/);
     world.grantExpForTest(100000);
-    expect(world.travelToVictoria()).toBeNull();
+    expect(world.sailToMainland()).toBeNull();
     expect(events.some((e) => e.type === 'ending')).toBe(true);
   });
 });

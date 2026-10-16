@@ -9,14 +9,11 @@ import { addItem, emptyInventory, removeAt } from './inventory';
 import type { Rng } from './rng';
 
 export const MAX_LEVEL = 10;
-export const AP_PER_LEVEL = 5;
-/** Beginners earn 1 SP per level from 2 to 7 (6 SP total), as in the classic game. */
-export const LAST_SP_LEVEL = 7;
-
-/** Classic EXP needed to reach the next level, indexed by current level. */
-export const EXP_TABLE: Record<number, number> = {
-  1: 15, 2: 34, 3: 57, 4: 92, 5: 135, 6: 372, 7: 560, 8: 840, 9: 1242,
-};
+export const AP_PER_LEVEL = 4;
+/** Novices earn 1 SP per level from 2 to 9 (8 SP: not enough to max every skill). */
+export const LAST_SP_LEVEL = 9;
+const EXP_BASE = 10;
+const EXP_GROWTH = 1.72;
 
 export type StatName = 'str' | 'dex' | 'int' | 'luk';
 
@@ -42,7 +39,7 @@ export interface PlayerState {
   luk: number;
   ap: number;
   sp: number;
-  mesos: number;
+  acorns: number;
   skills: Record<SkillId, number>;
   inventory: Inventory;
   equipment: Equipment;
@@ -50,32 +47,32 @@ export interface PlayerState {
   mapId: string;
   x: number;
   y: number;
-  /** Set once the player has sailed to Victoria Island (end of the MVP). */
+  /** Set once the player has sailed for the Mainland (end of the MVP). */
   finished: boolean;
 }
 
 export function createPlayer(name: string): PlayerState {
   const inventory = emptyInventory();
-  addItem(inventory, 'red_potion', 5);
+  addItem(inventory, 'berry_tonic', 5);
   return {
     id: crypto.randomUUID(),
     name,
     level: 1,
     exp: 0,
-    hp: 50,
-    mp: 5,
-    maxHp: 50,
-    maxMp: 5,
-    str: 12,
-    dex: 5,
-    int: 4,
-    luk: 4,
+    hp: 55,
+    mp: 10,
+    maxHp: 55,
+    maxMp: 10,
+    str: 11,
+    dex: 6,
+    int: 5,
+    luk: 5,
     ap: 0,
     sp: 0,
-    mesos: 0,
-    skills: { three_snails: 0, recovery: 0, nimble_feet: 0 },
+    acorns: 0,
+    skills: { shell_toss: 0, second_wind: 0, quickstep: 0 },
     inventory,
-    equipment: { weapon: 'training_sword', hat: null, top: 'white_undershirt', shoes: 'leather_sandals' },
+    equipment: { weapon: 'practice_blade', hat: null, top: 'linen_tunic', shoes: 'rope_sandals' },
     quests: {},
     mapId: TOWN_MAP,
     x: 120,
@@ -84,8 +81,9 @@ export function createPlayer(name: string): PlayerState {
   };
 }
 
+/** EXP needed to reach the next level: a smooth exponential curve. */
 export function expToNext(level: number): number {
-  return EXP_TABLE[level] ?? 0;
+  return level >= 1 && level < MAX_LEVEL ? Math.round(EXP_BASE * EXP_GROWTH ** level) : 0;
 }
 
 /** Adds EXP, applying level ups. Returns the number of levels gained. */

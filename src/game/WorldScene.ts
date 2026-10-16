@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import {
-  CHAR_FRAMES, drawCharacter, drawHatOverlay, drawHills, drawItemIcon, drawMapLayer, drawMeso, drawMob, drawPortal, drawSky,
+  CHAR_FRAMES, drawCharacter, drawHatOverlay, drawHills, drawItemIcon, drawMapLayer, drawAcorn, drawMob, drawPortal, drawSky,
   drawWeapon,
 } from '../art/draw';
 import { ITEMS } from '../data/items';
@@ -69,7 +69,7 @@ export class WorldScene extends Phaser.Scene {
       if (item.tab === 'equip' && item.slot === 'weapon') add(`weapon_${id}`, drawWeapon(id));
       if (item.tab === 'equip' && item.slot === 'hat') add(`hat_${id}`, drawHatOverlay(id));
     }
-    add('meso', drawMeso());
+    add('acorn', drawAcorn());
     add('portal', drawPortal());
   }
 
@@ -251,7 +251,7 @@ export class WorldScene extends Phaser.Scene {
       seen.add(d.uid);
       let img = this.dropViews.get(d.uid);
       if (!img) {
-        img = this.add.image(d.x, d.y, d.mesos ? 'meso' : `item_${d.itemId}`).setOrigin(0.5, 1).setDepth(5);
+        img = this.add.image(d.x, d.y, d.acorns ? 'acorn' : `item_${d.itemId}`).setOrigin(0.5, 1).setDepth(5);
         this.dropViews.set(d.uid, img);
       }
       const bob = d.settled ? Math.sin(t * 3 + d.uid) * 3 - 3 : 0;
@@ -271,7 +271,7 @@ export class WorldScene extends Phaser.Scene {
       seen.add(p.uid);
       let img = this.projectileViews.get(p.uid);
       if (!img) {
-        img = this.add.image(p.x, p.y, 'item_snail_shell').setDepth(8).setScale(0.7);
+        img = this.add.image(p.x, p.y, 'item_mossy_shell').setDepth(8).setScale(0.7);
         this.projectileViews.set(p.uid, img);
       }
       img.setPosition(p.x, p.y).setAngle(p.travelled * 3 * p.dir);
