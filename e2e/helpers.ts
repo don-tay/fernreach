@@ -18,6 +18,11 @@ type Hook = {
   spawnDrop(loot: { itemId?: string; mesos?: number }): void;
   approachMob(mobId: string): boolean;
   save(): void;
+  netState(): {
+    status: string;
+    room: string;
+    players: { name: string; level: number; map: string | null; pose: string; bubble: string | null; x?: number; y?: number }[];
+  };
 };
 
 declare global {
@@ -35,8 +40,9 @@ export function trackErrors(page: Page): string[] {
   return errors;
 }
 
-export async function newGame(page: Page, name = 'Tester'): Promise<void> {
-  await page.goto('/?seed=1');
+/** Starts a new game. Uses the in-browser transport so tests never touch public relays. */
+export async function newGame(page: Page, name = 'Tester', net = 'local'): Promise<void> {
+  await page.goto(`/?seed=1&net=${net}`);
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await page.fill('#name', name);
@@ -65,3 +71,11 @@ export async function teleport(page: Page, x: number): Promise<void> {
 
 export const count = (s: Awaited<ReturnType<typeof state>>, itemId: string) =>
   Object.values(s.inventory).flat().filter((i) => i.itemId === itemId).reduce((n, i) => n + i.qty, 0);
+
+export const netState = (page: Page) => page.evaluate(() => window.__maple.netState());
+
+export async function chat(page: Page, text: string): Promise<void> {
+  await page.keyboard.press('Enter');
+  await page.getByTestId('chat-input').fill(text);
+  await page.getByTestId('chat-input').press('Enter');
+}
