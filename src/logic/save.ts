@@ -93,3 +93,23 @@ export function clearSave(storage: Storage): void {
   storage.removeItem(SAVE_KEY);
   storage.removeItem(LEGACY_SAVE_KEY);
 }
+
+const CODE_PREFIX = 'FERN1:';
+
+/** A copyable text code holding the whole save, for backing up or moving between devices. */
+export function exportCode(p: PlayerState): string {
+  const bytes = new TextEncoder().encode(serialize(p));
+  return CODE_PREFIX + btoa(String.fromCharCode(...bytes));
+}
+
+/** Reads a save code; returns null if it is not a valid Fernreach save. */
+export function importCode(code: string): PlayerState | null {
+  const trimmed = code.trim().replace(/\s+/g, '');
+  if (!trimmed.startsWith(CODE_PREFIX)) return null;
+  try {
+    const bin = atob(trimmed.slice(CODE_PREFIX.length));
+    return deserialize(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))));
+  } catch {
+    return null;
+  }
+}

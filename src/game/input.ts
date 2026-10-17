@@ -27,7 +27,7 @@ export class Keyboard {
 
   constructor(target: Window) {
     target.addEventListener('keydown', (e) => {
-      if (e.target instanceof HTMLInputElement) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const action = KEYMAP[e.code];
       if (action) {
         e.preventDefault();
@@ -43,6 +43,16 @@ export class Keyboard {
       if (action) this.held.delete(action);
     });
     target.addEventListener('blur', () => this.held.clear());
+  }
+
+  /** Starts holding an action (used by on-screen touch controls). */
+  press(action: Action): void {
+    if (!this.held.has(action)) this.pressed.add(action);
+    this.held.add(action);
+  }
+
+  release(action: Action): void {
+    this.held.delete(action);
   }
 
   /** Returns current input and clears the newly-pressed set. */

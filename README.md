@@ -27,7 +27,9 @@ pnpm dev        # http://localhost:5199
 | Players in your channel | P |
 | Close windows / menu (online settings) | Esc |
 
-Progress autosaves to localStorage on level-up, on map change and every 30 seconds.
+**Phones and tablets:** play in landscape. A direction pad (left) and Jump, Attack, Loot, skill and tonic buttons (right) replace the keyboard; the top bar opens windows, chat and the menu. Android can go full screen with ⛶. On iPhone, use Share → **Add to Home Screen** to play without the address bar.
+
+Progress autosaves to localStorage on level-up, on map change and every 30 seconds. To back up a character or move it to another device, use **Export save** / **Import save** in the menu (Esc).
 
 ## Multiplayer
 
@@ -54,7 +56,7 @@ You play online by default. You can see and chat with other players on the same 
 | `pnpm build` | Type-check and production build |
 | `pnpm typecheck` | TypeScript only |
 | `pnpm test` | Vitest unit tests (game logic) |
-| `pnpm test:e2e` | Playwright browser smoke tests (starts the dev server) |
+| `pnpm test:e2e` | Playwright browser tests on desktop and an emulated phone in landscape (starts the dev server) |
 
 ## Deploy
 

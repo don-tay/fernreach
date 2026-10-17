@@ -11,7 +11,10 @@ export default defineConfig({
     trace: 'retain-on-failure',
     viewport: { width: 1024, height: 768 },
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1024, height: 768 } } }],
+  projects: [
+    { name: 'chromium', testIgnore: /mobile\.spec/, use: { ...devices['Desktop Chrome'], viewport: { width: 1024, height: 768 } } },
+    { name: 'mobile', testMatch: /mobile\.spec/, use: { ...devices['Pixel 7 landscape'] } },
+  ],
   webServer: {
     command: 'pnpm dev',
     url: 'http://localhost:5199',

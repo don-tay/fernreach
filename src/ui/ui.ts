@@ -7,7 +7,8 @@ import type { QuestId } from '../data/quests';
 import { SKILLS, SKILL_IDS } from '../data/skills';
 import type { SkillId } from '../data/skills';
 import { expToNext, MAX_LEVEL } from '../logic/player';
-import type { StatName } from '../logic/player';
+import type { PlayerState, StatName } from '../logic/player';
+import { exportCode, importCode } from '../logic/save';
 import { questProgress, questStatus } from '../logic/quests';
 import { TAB_CAPACITY } from '../logic/inventory';
 import type { World, WorldEvent } from '../logic/world';
@@ -23,7 +24,8 @@ type Modal =
   | { type: 'shop'; npc: NpcDef }
   | { type: 'death' }
   | { type: 'ending' }
-  | { type: 'menu'; confirmNew?: boolean };
+  | { type: 'menu'; confirmNew?: boolean }
+  | { type: 'transfer'; mode: 'export' | 'import' };
 
 interface Message {
   text: string;
@@ -74,6 +76,10 @@ export interface UiOptions {
   onNewGame: () => void;
   /** Called when the chat box opens, so held movement keys are released. */
   onChatOpen?: () => void;
+  /** Replaces the current character with an imported save. */
+  onImport?: (p: PlayerState) => void;
+  /** Touch layout: one window at a time, centred. */
+  touch?: boolean;
   net?: NetSession | null;
 }
 
@@ -81,6 +87,8 @@ export interface UiOptions {
 export class UI {
   private open = new Set<WindowId>();
   private invTab: InvTab = 'equip';
+  /** Inventory slot tapped/clicked in the current tab; shows its details and a Use/Equip button. */
+  private selectedSlot: number | null = null;
   private shopTab: InvTab = 'etc';
   private modal: Modal | null = null;
   private note = '';
@@ -179,7 +187,10 @@ export class UI {
 
   private toggle(win: WindowId): void {
     if (this.open.has(win)) this.open.delete(win);
-    else this.open.add(win);
+    else {
+      if (this.opts.touch) this.open.clear();
+      this.open.add(win);
+    }
     this.dirty = true;
   }
 
@@ -187,6 +198,7 @@ export class UI {
     this.modal = modal;
     this.note = '';
     this.world.blocked = modal !== null && modal.type !== 'death';
+    document.documentElement.classList.toggle('modal-open', modal !== null);
     this.dirty = true;
   }
 
@@ -226,6 +238,7 @@ export class UI {
       this.dirty = false;
     }
     if (net) this.set('.net-status', net.statusText());
+    document.documentElement.classList.toggle('window-open', this.open.size > 0);
   }
 
   private renderLog(): void {
@@ -353,12 +366,21 @@ export class UI {
       const s = inv[this.invTab][i];
       if (!s) return `<div class="slot"></div>`;
       const item = getItem(s.itemId);
-      const hint = item.tab === 'equip' ? '\n(double-click to equip)' : item.tab === 'use' ? '\n(double-click to use)' : '';
-      return `<div class="slot filled" data-action="inv-slot" data-index="${i}" data-item="${s.itemId}" title="${describe(item)}${hint}">
+      const selected = i === this.selectedSlot ? 'selected' : '';
+      return `<div class="slot filled ${selected}" data-action="inv-slot" data-index="${i}" data-item="${s.itemId}">
         ${icon(s.itemId)}${item.tab === 'equip' ? '' : `<span class="qty">${s.qty}</span>`}</div>`;
     }).join('');
-    return `<div class="tabs">${tabs}</div><div class="grid">${slots}</div>
+    return `<div class="tabs">${tabs}</div><div class="grid">${slots}</div>${this.slotDetail()}
       <div class="acorns"><span class="acorn-icon"></span><b data-testid="acorns">${this.world.player.acorns.toLocaleString()}</b> acorns</div>`;
+  }
+
+  private slotDetail(): string {
+    const slot = this.selectedSlot === null ? undefined : this.world.player.inventory[this.invTab][this.selectedSlot];
+    if (!slot) return '';
+    const item = getItem(slot.itemId);
+    const action = item.tab === 'equip' ? 'Equip' : item.tab === 'use' ? 'Use' : '';
+    return `<div class="inv-detail" data-testid="inv-detail"><span>${describe(item).split('\n').join(' · ')}</span>
+      ${action ? `<button data-action="inv-use" data-testid="inv-use">${action}</button>` : ''}</div>`;
   }
 
   private skillsBody(): string {
@@ -436,6 +458,15 @@ export class UI {
         <p>Level ${p.level} · ${p.acorns.toLocaleString()} acorns · ${QUEST_IDS.filter((q) => questStatus(p, q) === 'done').length}/${QUEST_IDS.length} quests</p>
         <button data-action="keep-playing">Keep playing on Fernreach</button></div>`;
     }
+    if (m.type === 'transfer') {
+      return m.mode === 'export'
+        ? this.dialog('Export save', `<p>Copy this code somewhere safe. Import it later, or on another device, to restore your character.</p>
+            <textarea class="save-code" data-testid="save-code" readonly>${exportCode(this.world.player)}</textarea>`,
+          [['Copy', 'copy-code'], ['Close', 'close-modal']], 'transfer')
+        : this.dialog('Import save', `<p>Paste a save code. This replaces your current character.</p>
+            <textarea class="save-code" data-testid="save-code" placeholder="FERN1:…"></textarea>`,
+          [['Load save', 'import-code'], ['Cancel', 'close-modal']], 'transfer');
+    }
     if (m.confirmNew) {
       return this.dialog('New Game', '<p>Start over? Your current character will be erased.</p>', [
         ['Erase and start over', 'new-game'], ['Cancel', 'menu'],
@@ -450,7 +481,8 @@ export class UI {
         <tr><td>1 / 2</td><td>Berry / Dew Tonic</td></tr>
         <tr><td>I S K E Q P</td><td>Items · Stats · Skills · Equipment · Quests · Players</td></tr>
         <tr><td>Enter</td><td>Chat with players on this map</td></tr>
-      </table>`, [['Save game', 'save'], ['New game', 'confirm-new'], ['Close', 'close-modal']], 'menu');
+      </table>`, [['Save game', 'save'], ['Export save', 'transfer', 'export'], ['Import save', 'transfer', 'import'],
+      ['New game', 'confirm-new'], ['Close', 'close-modal']], 'menu');
   }
 
   private dialog(title: string, body: string, buttons: [string, string, string?][], testid: string, side = ''): string {
@@ -535,7 +567,44 @@ export class UI {
       case 'ap': return w.addAp(stat as StatName);
       case 'sp': return w.addSp(skill as SkillId);
       case 'unequip': return w.unequip(slot as EquipSlot);
-      case 'inv-tab': this.invTab = tab as InvTab; return;
+      case 'inv-tab':
+        this.invTab = tab as InvTab;
+        this.selectedSlot = null;
+        return;
+      case 'inv-slot':
+        this.selectedSlot = this.selectedSlot === Number(index) ? null : Number(index);
+        return;
+      case 'inv-use': {
+        const i = this.selectedSlot;
+        if (i === null) return;
+        if (this.invTab === 'equip') {
+          w.equip(i);
+          this.selectedSlot = null;
+        } else if (this.invTab === 'use') {
+          w.useItem(i);
+          if (!w.player.inventory.use[i]) this.selectedSlot = null;
+        }
+        return;
+      }
+      case 'transfer':
+        return this.setModal({ type: 'transfer', mode: arg as 'export' | 'import' });
+      case 'copy-code': {
+        const code = this.root.querySelector<HTMLTextAreaElement>('.save-code')?.value ?? '';
+        navigator.clipboard?.writeText(code).then(
+          () => this.pushMessage('Save code copied.', 'info'),
+          () => this.pushMessage('Could not copy; select the code and copy it manually.', 'warn'),
+        );
+        return;
+      }
+      case 'import-code': {
+        const p = importCode(this.root.querySelector<HTMLTextAreaElement>('.save-code')?.value ?? '');
+        if (!p) {
+          this.note = 'That is not a valid Fernreach save code.';
+          return;
+        }
+        this.opts.onImport?.(p);
+        return;
+      }
       case 'shop-tab': this.shopTab = tab as InvTab; return;
       case 'menu': return this.setModal({ type: 'menu' });
       case 'confirm-new': return this.setModal({ type: 'menu', confirmNew: true });
@@ -604,6 +673,7 @@ export class UI {
     const index = Number(el.dataset.index);
     if (this.invTab === 'equip') this.world.equip(index);
     else if (this.invTab === 'use') this.world.useItem(index);
+    this.selectedSlot = null;
     this.dirty = true;
   }
 }

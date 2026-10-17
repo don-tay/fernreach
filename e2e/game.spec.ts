@@ -194,3 +194,19 @@ test('progress survives a page reload', async ({ page }) => {
   expect(s.mapId).toBe('shellgrass_meadow_1');
   await expect(page.locator('.hud .pname')).toHaveText('Saver');
 });
+
+test('desktop shows no touch controls', async ({ page }) => {
+  await newGame(page);
+  await expect(page.locator('#touch')).toBeHidden();
+  await expect(page.locator('.hud-buttons')).toBeVisible();
+});
+
+test('New game from the menu really starts over', async ({ page }) => {
+  await newGame(page, 'Old');
+  await page.evaluate(() => window.__game.addExp(40));
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'New game' }).click();
+  await page.getByRole('button', { name: 'Erase and start over' }).click();
+  await expect(page.getByTestId('new-game')).toBeVisible();
+  await expect(page.getByTestId('continue')).toHaveCount(0);
+});

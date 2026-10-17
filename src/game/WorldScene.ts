@@ -14,8 +14,6 @@ import type { NetSession } from '../net/session';
 import { CharacterView, NAME_STYLE, swingProgress } from './CharacterView';
 import type { Keyboard } from './input';
 
-export const VIEW_W = 800;
-export const VIEW_H = 600;
 const STEP = 1 / 60;
 const REMOTE_TAG = '#9ad8ff';
 
@@ -30,6 +28,7 @@ interface MobView {
 export class WorldScene extends Phaser.Scene {
   private acc = 0;
   private mapObjects: Phaser.GameObjects.GameObject[] = [];
+  private sky?: Phaser.GameObjects.TileSprite;
   private hills?: Phaser.GameObjects.TileSprite;
   private mobViews = new Map<number, MobView>();
   private dropViews = new Map<number, Phaser.GameObjects.Image>();
@@ -47,7 +46,11 @@ export class WorldScene extends Phaser.Scene {
     this.registerTextures();
     this.me = new CharacterView(this, this.world.player.name, 7);
     const off = this.world.on((e) => this.onEvent(e));
-    this.events.once('shutdown', off);
+    this.scale.on('resize', this.fitView, this);
+    this.events.once('shutdown', () => {
+      off();
+      this.scale.off('resize', this.fitView, this);
+    });
   }
 
   private registerTextures(): void {
@@ -102,11 +105,15 @@ export class WorldScene extends Phaser.Scene {
       return o;
     };
 
-    keep(this.add.image(0, 0, key(`sky_${map.theme}`, () => drawSky(map.theme))).setOrigin(0).setScrollFactor(0).setDepth(0));
+    const { width, height } = this.scale;
+    this.sky = keep(
+      this.add.tileSprite(0, 0, width, height, key(`sky_${map.theme}`, () => drawSky(map.theme))).setOrigin(0).setScrollFactor(0).setDepth(0),
+    );
     this.hills = keep(
-      this.add.tileSprite(0, 0, VIEW_W, VIEW_H, key(`hills_${map.theme}`, () => drawHills(map.theme)))
+      this.add.tileSprite(0, 0, width, height, key(`hills_${map.theme}`, () => drawHills(map.theme)))
         .setOrigin(0).setScrollFactor(0).setDepth(1),
     );
+    this.fitView();
     keep(this.add.image(0, 0, key(`map_${map.id}`, () => drawMapLayer(map))).setOrigin(0).setDepth(2));
 
     for (const p of map.portals) {
@@ -130,6 +137,15 @@ export class WorldScene extends Phaser.Scene {
     cam.setBounds(0, 0, map.width, map.height);
     cam.centerOn(this.world.pr.body.x, this.world.pr.body.y - 120);
     this.mapDirty = false;
+  }
+
+  /** Follows the game size (it changes with the screen's shape). Hills stay anchored to the bottom. */
+  private fitView(): void {
+    const { width, height } = this.scale;
+    this.cameras.main.setSize(width, height);
+    this.sky?.setSize(width, height);
+    this.hills?.setSize(width, height);
+    if (this.hills) this.hills.tilePositionY = this.hills.texture.getSourceImage().height - height;
   }
 
   private destroyMobView(v: MobView): void {
@@ -164,8 +180,8 @@ export class WorldScene extends Phaser.Scene {
 
     const cam = this.cameras.main;
     const b = w.pr.body;
-    const tx = b.x - VIEW_W / 2;
-    const ty = b.y - VIEW_H / 2 - 60;
+    const tx = b.x - this.scale.width / 2;
+    const ty = b.y - this.scale.height / 2 - 60;
     cam.scrollX += (tx - cam.scrollX) * 0.12;
     cam.scrollY += (ty - cam.scrollY) * 0.12;
     if (this.hills) this.hills.tilePositionX = cam.scrollX * 0.3;

@@ -7,6 +7,7 @@ type Hook = {
     mp: number; ap: number; sp: number; str: number; acorns: number; dead: boolean; blocked: boolean; drops: number;
     inventory: Record<'equip' | 'use' | 'etc', { itemId: string; qty: number }[]>;
     quests: Record<string, { state: string; kills: number }>;
+    equipment: Record<string, string | null>;
     mobs: { id: string; x: number; y: number; hp: number; state: string }[];
   };
   teleport(x: number, y?: number): void;

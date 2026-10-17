@@ -1,10 +1,13 @@
 import * as Phaser from 'phaser';
 import './style.css';
 import { Keyboard } from './game/input';
-import { VIEW_H, VIEW_W, WorldScene } from './game/WorldScene';
+import { WorldScene } from './game/WorldScene';
+import { TouchControls } from './game/touch';
+import { viewSize } from './game/view';
 import { createPlayer } from './logic/player';
 import { createRng } from './logic/rng';
 import { clearSave, load, save } from './logic/save';
+import type { PlayerState } from './logic/player';
 import { poseOf } from './logic/pose';
 import { World } from './logic/world';
 import type { LocalPlayer } from './net/session';
@@ -19,6 +22,9 @@ const AUTOSAVE_MS = 30_000;
 const params = new URLSearchParams(location.search);
 const seed = Number(params.get('seed') ?? Date.now()) || 1;
 const NET_TICK_MS = 50;
+/** Touch devices (phones, tablets) get on-screen controls and a closer view. `?touch=1` forces it for testing. */
+const touch = matchMedia('(pointer: coarse)').matches || params.get('touch') === '1';
+document.documentElement.classList.toggle('touch', touch);
 
 /** `?net=local` connects tabs of this browser; `?net=down` simulates a failed connection. */
 function transportFactory(): TransportFactory {
@@ -58,8 +64,12 @@ function showTitle(): void {
 function start(player: ReturnType<typeof createPlayer>): void {
   document.getElementById('title')!.remove();
   const world = new World(player, createRng(seed));
-  const doSave = () => save(localStorage, world.player);
+  /** Turned off just before replacing or erasing the save, so the page's unload save can't write the old character back. */
+  let autosave = true;
+  const doSave = () => autosave && save(localStorage, world.player);
   doSave();
+  // Ask the browser not to clear our storage under pressure (helps on iPhones); best effort.
+  void navigator.storage?.persist?.().catch(() => {});
 
   const keyboard = new Keyboard(window);
   const local = (): LocalPlayer => {
@@ -77,26 +87,42 @@ function start(player: ReturnType<typeof createPlayer>): void {
   const uiRoot = document.getElementById('ui')!;
   const ui = new UI(uiRoot, world, {
     net,
+    touch,
     onChatOpen: () => keyboard.held.clear(),
     onSave: doSave,
     onNewGame: () => {
+      autosave = false;
       clearSave(localStorage);
+      location.reload();
+    },
+    onImport: (p: PlayerState) => {
+      autosave = false;
+      save(localStorage, p);
       location.reload();
     },
   });
   keyboard.onUiKey = (k) => ui.onKey(k);
+  if (touch) {
+    new TouchControls(document.getElementById('touch')!, {
+      keyboard, onUiKey: (k) => ui.onKey(k), countItem: (id) => world.countItem(id),
+    });
+  }
 
   world.on((e) => {
     if (e.type === 'levelUp' || e.type === 'mapChanged' || e.type === 'ending') doSave();
   });
   setInterval(doSave, AUTOSAVE_MS);
+  // Mobile browsers rarely fire beforeunload; save whenever the page is hidden too.
   window.addEventListener('beforeunload', doSave);
+  window.addEventListener('pagehide', doSave);
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && doSave());
 
+  const size = viewSize(innerWidth, innerHeight, touch);
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',
-    width: VIEW_W,
-    height: VIEW_H,
+    width: size.width,
+    height: size.height,
     backgroundColor: '#8fd3ff',
     pixelArt: false,
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
@@ -104,13 +130,29 @@ function start(player: ReturnType<typeof createPlayer>): void {
     audio: { noAudio: true },
   });
 
+  // Match the game's shape to the screen. Skip while typing, so the on-screen keyboard doesn't reshape the game.
+  const resize = () => {
+    const typing = document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLTextAreaElement;
+    const next = viewSize(innerWidth, innerHeight, touch);
+    if (!typing && (next.width !== game.scale.width || next.height !== game.scale.height)) game.scale.setGameSize(next.width, next.height);
+  };
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', resize);
+
   // Keep the DOM overlay exactly on top of the scaled canvas.
   let lastFit = '';
   const fitUi = () => {
     const rect = game.canvas?.getBoundingClientRect();
     if (rect?.width) {
-      const fit = `translate(${rect.left}px, ${rect.top}px) scale(${rect.width / VIEW_W})`;
-      if (fit !== lastFit) uiRoot.style.transform = lastFit = fit;
+      const { width, height } = game.scale;
+      const scale = rect.width / width;
+      const fit = `${width}x${height} translate(${rect.left}px, ${rect.top}px) scale(${scale})`;
+      if (fit !== lastFit) {
+        lastFit = fit;
+        Object.assign(uiRoot.style, { width: `${width}px`, height: `${height}px`, transform: fit.slice(fit.indexOf(' ') + 1) });
+        document.documentElement.style.setProperty('--ui-scale', String(scale));
+        document.documentElement.style.setProperty('--game-bottom', `${innerHeight - rect.bottom}px`);
+      }
     }
     requestAnimationFrame(fitUi);
   };
