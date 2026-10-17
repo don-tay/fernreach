@@ -1,8 +1,6 @@
 import type { Storage } from '../logic/save';
 
 export const SETTINGS_KEY = 'fernreach-net-settings-v1';
-/** Key used before the game was renamed. */
-export const LEGACY_SETTINGS_KEY = 'maple-net-settings-v1';
 export const CHANNELS = [1, 2, 3] as const;
 
 /** Per-browser network preferences, kept apart from the character save. */
@@ -16,7 +14,7 @@ const DEFAULTS: NetSettings = { online: true, channel: 1, privateCode: null };
 
 export function loadSettings(storage: Storage): NetSettings {
   try {
-    const raw = JSON.parse(storage.getItem(SETTINGS_KEY) ?? storage.getItem(LEGACY_SETTINGS_KEY) ?? '{}');
+    const raw = JSON.parse(storage.getItem(SETTINGS_KEY) ?? '{}');
     return {
       online: typeof raw.online === 'boolean' ? raw.online : DEFAULTS.online,
       channel: CHANNELS.includes(raw.channel) ? raw.channel : DEFAULTS.channel,

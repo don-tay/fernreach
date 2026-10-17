@@ -58,9 +58,6 @@ describe('settings and identity', () => {
     expect(loadSettings(storage)).toEqual({ online: false, channel: 3, privateCode: 'abc' });
     data.set('fernreach-net-settings-v1', '{"channel": 9, "online": "yes"}');
     expect(loadSettings(storage)).toEqual({ online: true, channel: 1, privateCode: null });
-    data.clear();
-    data.set('maple-net-settings-v1', '{"channel": 2, "online": false}');
-    expect(loadSettings(storage)).toEqual({ online: false, channel: 2, privateCode: null });
   });
 
   it('gives every character a permanent ID, including old saves', () => {

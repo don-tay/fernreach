@@ -32,6 +32,7 @@ describe('save', () => {
   it('rejects corrupt or incompatible data', () => {
     expect(deserialize('not json')).toBeNull();
     expect(deserialize(JSON.stringify({ version: 99, player: {} }))).toBeNull();
+    expect(deserialize(JSON.stringify({ version: 1, player: createPlayer('old') }))).toBeNull();
     const bad = createPlayer('x') as unknown as Record<string, unknown>;
     bad.level = 'ten';
     expect(deserialize(JSON.stringify({ version: 2, player: bad }))).toBeNull();
@@ -50,46 +51,3 @@ describe('save', () => {
   });
 });
 
-describe('migration from the pre-rename (v1) save', () => {
-  const v1 = {
-    version: 1,
-    player: {
-      id: 'abc', name: 'Old', level: 4, exp: 10, hp: 80, mp: 30, maxHp: 90, maxMp: 40, str: 20, dex: 6, int: 4, luk: 4,
-      ap: 0, sp: 1, mesos: 321,
-      skills: { three_snails: 2, recovery: 1, nimble_feet: 0 },
-      inventory: {
-        equip: [{ itemId: 'hand_axe', qty: 1 }],
-        use: [{ itemId: 'red_potion', qty: 12 }, { itemId: 'blue_potion', qty: 3 }],
-        etc: [{ itemId: 'snail_shell', qty: 7 }, { itemId: 'orange_mushroom_cap', qty: 2 }],
-      },
-      equipment: { weapon: 'sword', hat: 'blue_bandana', top: 'white_undershirt', shoes: 'leather_sandals' },
-      quests: { snail_shells: { state: 'active', kills: 0 }, orange_mushrooms: { state: 'done', kills: 15 } },
-      mapId: 'snail_hunting_2', x: 300, y: 640, finished: false,
-    },
-  };
-
-  it('renames IDs, currency, skills, quests and map', () => {
-    const p = deserialize(JSON.stringify(v1))!;
-    expect(p).not.toBeNull();
-    expect(p.acorns).toBe(321);
-    expect('mesos' in p).toBe(false);
-    expect(p.skills).toEqual({ shell_toss: 2, second_wind: 1, quickstep: 0 });
-    expect(p.inventory.use).toEqual([{ itemId: 'berry_tonic', qty: 12 }, { itemId: 'dew_tonic', qty: 3 }]);
-    expect(p.inventory.etc.map((s) => s.itemId)).toEqual(['mossy_shell', 'bouncy_cap']);
-    expect(p.inventory.equip[0].itemId).toBe('woodcutters_hatchet');
-    expect(p.equipment).toEqual({ weapon: 'iron_shortsword', hat: 'sky_headscarf', top: 'linen_tunic', shoes: 'rope_sandals' });
-    expect(Object.keys(p.quests)).toEqual(['shell_garden', 'bouncecap_trouble']);
-    expect(p.mapId).toBe('shellgrass_meadow_2');
-    expect(p.id).toBe('abc');
-  });
-
-  it('loads from the legacy key and moves the save to the new key on save', () => {
-    const s = memoryStorage();
-    s.setItem('maple-mvp-save-v1', JSON.stringify(v1));
-    const p = load(s)!;
-    expect(p.name).toBe('Old');
-    save(s, p);
-    expect(s.getItem('maple-mvp-save-v1')).toBeNull();
-    expect(load(s)!.acorns).toBe(321);
-  });
-});
