@@ -22,7 +22,5 @@ export default defineConfig({
     url: 'http://localhost:5199',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
-  // CI runners draw WebGL in software and are several times slower than a laptop; allow waits more time there.
-  expect: { timeout: process.env.CI ? 15_000 : 5_000 },
   },
 });
