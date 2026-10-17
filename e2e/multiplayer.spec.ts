@@ -16,8 +16,10 @@ test('players see each other and follow each other’s movement', async ({ conte
   const [alice, bob] = await twoPlayers(context);
   await expect(alice.getByTestId('net-status')).toHaveText('● Ch 1 · 1 nearby');
   const before = (await netState(alice)).players[0].x!;
+  // Background tabs get throttled frames on slow CI runners; keep the moving player's page in front.
+  await bob.bringToFront();
   await bob.keyboard.down('ArrowRight');
-  await expect.poll(async () => (await netState(alice)).players[0].x!).toBeGreaterThan(before + 40);
+  await expect.poll(async () => (await netState(alice)).players[0].x!, { timeout: 20_000 }).toBeGreaterThan(before + 40);
   await bob.keyboard.up('ArrowRight');
 });
 
