@@ -23,7 +23,7 @@
   "packageManager": "pnpm@12.11.2",
   "dependencies": {
     "phaser": "^4.2.1",
-    "trystero": "^0.26.0"
+    "trystero": "^0.27.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.0",
